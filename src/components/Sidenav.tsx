@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useRef, useState, WheelEvent } from 'react'
 import { NavLink } from 'react-router-dom'
 import { MediaItem } from '../api/jellyfin'
 import '../App.css'
+import { useAudioStorageContext } from '../context/AudioStorageContext/AudioStorageContext'
 import { useDownloadContext } from '../context/DownloadContext/DownloadContext'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { buildUrlWithSavedFilters } from '../context/FilterContext/FilterContext'
@@ -31,6 +32,7 @@ export const Sidenav = (props: { username: string }) => {
     const playback = usePlaybackContext()
     const searchInputRef = useRef<HTMLInputElement>(null)
     const { showSidenav, closeSidenav } = useSidenavContext()
+    const audioStorage = useAudioStorageContext()
 
     const { playlists, loading, error } = useJellyfinPlaylistsList()
     const { disabled, setDisabled } = useScrollContext()
@@ -68,22 +70,28 @@ export const Sidenav = (props: { username: string }) => {
                 setSearchAttempted(true)
 
                 try {
-                    // Fetch artists from /Artists endpoint
-                    const [artistResponse, itemsResponse, genreResponse] = await Promise.all([
-                        api.searchArtists(searchQuery, 20),
-                        api.searchItems(searchQuery, 40),
-                        api.searchGenres(searchQuery, 20),
-                    ])
+                    if (navigator.onLine) {
+                        // Fetch artists from /Artists endpoint
+                        const [artistResponse, itemsResponse, genreResponse] = await Promise.all([
+                            api.searchArtists(searchQuery, 20),
+                            api.searchItems(searchQuery, 40),
+                            api.searchGenres(searchQuery, 20),
+                        ])
 
-                    // Fetch songs, albums, and playlists from /Items endpoint
-                    const artists = artistResponse.slice(0, 4)
-                    const songs = itemsResponse.filter(item => item.Type === 'Audio').slice(0, 6)
-                    const albums = itemsResponse.filter(item => item.Type === 'MusicAlbum').slice(0, 4)
-                    const playlists = itemsResponse.filter(item => item.Type === 'Playlist').slice(0, 4)
-                    const genres = genreResponse.slice(0, 4)
+                        // Fetch songs, albums, and playlists from /Items endpoint
+                        const artists = artistResponse.slice(0, 4)
+                        const songs = itemsResponse.filter(item => item.Type === 'Audio').slice(0, 6)
+                        const albums = itemsResponse.filter(item => item.Type === 'MusicAlbum').slice(0, 4)
+                        const playlists = itemsResponse.filter(item => item.Type === 'Playlist').slice(0, 4)
+                        const genres = genreResponse.slice(0, 4)
 
-                    const limitedResults = [...songs, ...artists, ...albums, ...playlists, ...genres]
-                    setSearchResults(limitedResults)
+                        const limitedResults = [...songs, ...artists, ...albums, ...playlists, ...genres]
+                        setSearchResults(limitedResults)
+                    } else {
+                        // Use offline search when no network
+                        const offlineResults = await audioStorage.searchOfflineItems(searchQuery, 10)
+                        setSearchResults(offlineResults)
+                    }
                 } catch (err) {
                     console.error('Search Error:', err)
                     setSearchError('Failed to load search results')
@@ -96,7 +104,7 @@ export const Sidenav = (props: { username: string }) => {
         }, 200)
 
         return () => clearTimeout(debounceTimer)
-    }, [searchQuery, api.auth.serverUrl, api.auth.token, api.auth.userId, api])
+    }, [searchQuery, api.auth.serverUrl, api.auth.token, api.auth.userId, api, audioStorage])
 
     const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value)

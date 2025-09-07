@@ -5,6 +5,7 @@ import { MediaItem } from '../api/jellyfin'
 import { Loader } from '../components/Loader'
 import { MediaList } from '../components/MediaList'
 import { TrackList } from '../components/TrackList'
+import { useAudioStorageContext } from '../context/AudioStorageContext/AudioStorageContext'
 import { useJellyfinContext } from '../context/JellyfinContext/JellyfinContext'
 import { usePageTitle } from '../context/PageTitleContext/PageTitleContext'
 import './SearchResults.css'
@@ -22,6 +23,7 @@ interface SearchResult {
 
 export const SearchResults = () => {
     const api = useJellyfinContext()
+    const audioStorage = useAudioStorageContext()
 
     const { query } = useParams<{ query: string }>()
     const { setPageTitle } = usePageTitle()
@@ -53,51 +55,62 @@ export const SearchResults = () => {
             setError(null)
 
             try {
-                const [artistItems, albumItems, playlistItems, songs, genreItems] = await Promise.all([
-                    api.searchArtists(query, 10),
-                    api.searchAlbumsDetailed(query, 10),
-                    api.searchPlaylistsDetailed(query, 10),
-                    api.fetchSongs(query),
-                    api.searchGenres(query, 10),
-                ])
+                if (navigator.onLine) {
+                    const [artistItems, albumItems, playlistItems, songs, genreItems] = await Promise.all([
+                        api.searchArtists(query, 10),
+                        api.searchAlbumsDetailed(query, 10),
+                        api.searchPlaylistsDetailed(query, 10),
+                        api.fetchSongs(query),
+                        api.searchGenres(query, 10),
+                    ])
 
-                const artists = artistItems.map(artist => ({
-                    type: 'Artist' as const,
-                    id: artist.Id,
-                    name: artist.Name,
-                    thumbnailUrl: api.getImageUrl(artist, 'Primary', { width: 36, height: 36 }),
-                    isFavorite: artist.UserData?.IsFavorite || false,
-                    _mediaItem: artist,
-                }))
+                    const artists = artistItems.map(artist => ({
+                        type: 'Artist' as const,
+                        id: artist.Id,
+                        name: artist.Name,
+                        thumbnailUrl: api.getImageUrl(artist, 'Primary', { width: 36, height: 36 }),
+                        isFavorite: artist.UserData?.IsFavorite || false,
+                        _mediaItem: artist,
+                    }))
 
-                const albums = albumItems.map(item => ({
-                    type: 'Album' as const,
-                    id: item.Id,
-                    name: item.Name,
-                    thumbnailUrl: api.getImageUrl(item, 'Primary', { width: 46, height: 46 }),
-                    artists: [item.AlbumArtists?.[0]?.Name || item.AlbumArtist || 'Unknown Artist'],
-                    isFavorite: item.UserData?.IsFavorite || false,
-                    _mediaItem: item,
-                }))
+                    const albums = albumItems.map(item => ({
+                        type: 'Album' as const,
+                        id: item.Id,
+                        name: item.Name,
+                        thumbnailUrl: api.getImageUrl(item, 'Primary', { width: 46, height: 46 }),
+                        artists: [item.AlbumArtists?.[0]?.Name || item.AlbumArtist || 'Unknown Artist'],
+                        isFavorite: item.UserData?.IsFavorite || false,
+                        _mediaItem: item,
+                    }))
 
-                const playlists = playlistItems.map(playlist => ({
-                    type: 'Playlist' as const,
-                    id: playlist.Id,
-                    name: playlist.Name,
-                    thumbnailUrl: api.getImageUrl(playlist, 'Primary', { width: 46, height: 46 }),
-                    totalTracks: playlist.ChildCount || 0,
-                    isFavorite: playlist.UserData?.IsFavorite || false,
-                    _mediaItem: playlist,
-                }))
+                    const playlists = playlistItems.map(playlist => ({
+                        type: 'Playlist' as const,
+                        id: playlist.Id,
+                        name: playlist.Name,
+                        thumbnailUrl: api.getImageUrl(playlist, 'Primary', { width: 46, height: 46 }),
+                        totalTracks: playlist.ChildCount || 0,
+                        isFavorite: playlist.UserData?.IsFavorite || false,
+                        _mediaItem: playlist,
+                    }))
 
-                const genres = genreItems.map(genre => ({
-                    type: 'Genre' as const,
-                    id: genre.Name,
-                    name: genre.Name,
-                    _mediaItem: genre,
-                }))
+                    const genres = genreItems.map(genre => ({
+                        type: 'Genre' as const,
+                        id: genre.Name,
+                        name: genre.Name,
+                        _mediaItem: genre,
+                    }))
 
-                setResults({ artists, albums, playlists, songs, genres })
+                    setResults({ artists, albums, playlists, songs, genres })
+                } else {
+                    const offlineSongs = await audioStorage.searchOfflineItems(query, 50)
+                    setResults({
+                        artists: [],
+                        albums: [],
+                        playlists: [],
+                        songs: offlineSongs,
+                        genres: [],
+                    })
+                }
             } catch (err) {
                 console.error('Search Error:', err)
                 setError('Failed to load search results')
@@ -109,7 +122,7 @@ export const SearchResults = () => {
         fetchSearchResults()
 
         return () => setPageTitle('')
-    }, [query, setPageTitle, api])
+    }, [query, setPageTitle, api, audioStorage])
 
     if (loading) return <Loader />
     if (error) return <div>{error}</div>
