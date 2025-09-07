@@ -182,6 +182,7 @@ export const PlaylistTrackList = ({
                 itemContent={renderTrack}
                 endReached={loadMore}
                 overscan={800}
+                initialItemCount={displayItems.length}
             />
         </ul>
     )

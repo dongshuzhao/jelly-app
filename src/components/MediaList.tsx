@@ -395,6 +395,7 @@ export const MediaList = ({
                         }}
                         endReached={loadMore}
                         overscan={800}
+                        initialItemCount={displayItems.length}
                     />
                 </DraggableVirtuoso>
             )}
@@ -406,6 +407,7 @@ export const MediaList = ({
                     itemContent={renderItem}
                     endReached={loadMore}
                     overscan={800}
+                    initialItemCount={displayItems.length}
                 />
             )}
         </ul>
