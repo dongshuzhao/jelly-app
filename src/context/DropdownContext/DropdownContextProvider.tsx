@@ -321,6 +321,10 @@ const useInitialState = () => {
             } else if (customContainer === 'favorites') {
                 const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
                 return favorites
+            } else if (customContainer?.startsWith('genre_')) {
+                const genreName = customContainer.replace('genre_', '')
+                const genreTracks = await api.getGenreTracks(genreName, 0, JELLYFIN_MAX_LIMIT)
+                return genreTracks
             } else {
                 return [item]
             }

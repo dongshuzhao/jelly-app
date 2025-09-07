@@ -713,7 +713,12 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
             },
             { signal: AbortSignal.timeout(20000) }
         )
-        return await parseItemDtos(response.data.Items)
+
+        const items = await parseItemDtos(response.data.Items)
+
+        syncDownloadsById(`JMA_CUSTOM_GENRE_${genre.toUpperCase()}`, items)
+
+        return items
     }
 
     const getPlaylist = async (playlistId: string) => {
