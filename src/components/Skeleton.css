@@ -36,6 +36,13 @@
     border-radius: 20px;
 }
 
+/* Genre thumbnail */
+.skeleton-loading > .skeleton-effect.thumbnail.genre {
+    width: 36px;
+    height: 36px;
+    border-radius: 20px;
+}
+
 .skeleton-loading > .skeleton-details {
     flex: 1;
     display: flex;
@@ -64,6 +71,12 @@
 
 /* Artists */
 .skeleton-loading > .skeleton-details > .skeleton-effect.artist.title {
+    width: 35%;
+    margin-bottom: 0;
+}
+
+/* Genres */
+.skeleton-loading > .skeleton-details > .skeleton-effect.genre.title {
     width: 35%;
     margin-bottom: 0;
 }

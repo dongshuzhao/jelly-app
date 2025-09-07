@@ -235,6 +235,21 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         return await parseItemDtos(response.data.Items)
     }
 
+    const getRecentGenres = async () => {
+        const genresApi = new GenresApi(api.configuration)
+        const response = await genresApi.getGenres(
+            {
+                userId,
+                sortBy: [ItemSortBy.DatePlayed],
+                sortOrder: [SortOrder.Descending],
+                includeItemTypes: [BaseItemKind.Audio],
+                limit: Math.min(12, JELLYFIN_MAX_LIMIT),
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
+        return await parseItemDtos(response.data.Items)
+    }
+
     const fetchRecentlyPlayed = async (
         startIndex: number,
         limit: number,
@@ -342,6 +357,27 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
             { signal: AbortSignal.timeout(20000) }
         )
 
+        return await parseItemDtos(response.data.Items)
+    }
+
+    const getAllGenres = async (
+        startIndex = 0,
+        limit = 40,
+        sortBy: ItemSortBy[] = [ItemSortBy.SortName],
+        sortOrder: SortOrder[] = [SortOrder.Ascending]
+    ) => {
+        const genresApi = new GenresApi(api.configuration)
+        const response = await genresApi.getGenres(
+            {
+                userId,
+                sortBy,
+                sortOrder,
+                includeItemTypes: [BaseItemKind.Audio],
+                startIndex,
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
         return await parseItemDtos(response.data.Items)
     }
 
@@ -1065,6 +1101,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         getAllAlbums,
         getAllArtists,
         getAllAlbumArtists,
+        getAllGenres,
         getAllTracks,
         getFavoriteTracks,
         getAlbumDetails,
@@ -1102,5 +1139,6 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         getTrackInfo,
         getMediaItem,
         createCustomContainerMediaItem,
+        getRecentGenres,
     }
 }

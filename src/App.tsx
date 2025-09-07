@@ -32,6 +32,7 @@ import { Downloads } from './pages/Downloads'
 import { Favorites } from './pages/Favorites'
 import { FrequentlyPlayed } from './pages/FrequentlyPlayed'
 import { Genre } from './pages/Genre'
+import { Genres } from './pages/Genres'
 import { Home } from './pages/Home'
 import { InstantMix } from './pages/InstantMix'
 import { Login } from './pages/Login'
@@ -236,6 +237,7 @@ const MainLayout = ({ auth, handleLogout }: { auth: AuthData; handleLogout: () =
                                 element={<Main content={AlbumArtists} filterType={'mediaItems'} />}
                             />
                             <Route path="/genre/:genre" element={<Main content={Genre} filterType={'mediaItems'} />} />
+                            <Route path="/genres" element={<Main content={Genres} filterType={'mediaItems'} />} />
                             <Route
                                 path="/playlist/:playlistId"
                                 element={<Main content={Playlist} filterType={'mediaItemsPlaylist'} />}

@@ -50,7 +50,7 @@ export const MediaList = ({
     infiniteData: InfiniteData<MediaItem[], unknown> | undefined
     indexOffset?: number
     isLoading: boolean
-    type: 'song' | 'album' | 'artist' | 'playlist'
+    type: 'song' | 'album' | 'artist' | 'playlist' | 'genre'
     title: string
     disableUrl?: boolean
     reviver?: IReviver | 'persistAll'
@@ -146,6 +146,12 @@ export const MediaList = ({
                 return (
                     <div className="media-item album-item" ref={el => setRowRefs(index, el)}>
                         <Skeleton type="album" />
+                    </div>
+                )
+            } else if (type === 'genre') {
+                return (
+                    <div className="media-item genre-item" ref={el => setRowRefs(index, el)}>
+                        <Skeleton type="genre" />
                     </div>
                 )
             } else {
@@ -265,6 +271,32 @@ export const MediaList = ({
                     />
                 </div>
             )
+        } else if (type === 'genre') {
+            return (
+                <div
+                    className={`media-item genre-item ${itemClass}`}
+                    onClick={() => navigate(`/genre/${encodeURIComponent(item.Name || '')}`)}
+                    ref={el => setRowRefs(index, el)}
+                    onContextMenu={e => dropdown.onContextMenu(e, { item }, false, hidden)}
+                    onTouchStart={e => dropdown.onTouchStart(e, { item }, false, hidden)}
+                    onTouchMove={dropdown.onTouchClear}
+                    onTouchEnd={dropdown.onTouchClear}
+                >
+                    <Squircle width={46} height={46} cornerRadius={6} className="media-state">
+                        <JellyImg item={item} type={'Primary'} width={46} height={46} />
+                    </Squircle>
+                    <div className="media-details">
+                        <span className="song-name">{item.Name || 'Unknown Genre'}</span>
+                    </div>
+
+                    <MediaIndicators
+                        item={item}
+                        disableActions={disableActions}
+                        listeners={listeners}
+                        isDraggable={isDraggable}
+                    />
+                </div>
+            )
         } else {
             return (
                 <div
@@ -328,7 +360,9 @@ export const MediaList = ({
                     ? 'No albums were found'
                     : type === 'artist'
                     ? 'No artists were found'
-                    : 'No playlists were found'}
+                    : type === 'playlist'
+                    ? 'No playlists were found'
+                    : 'No genres were found'}
             </div>
         )
     }
