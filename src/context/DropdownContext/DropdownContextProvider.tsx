@@ -2,7 +2,7 @@ import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models'
 import { ArrowLeftIcon, ChevronRightIcon, HeartFillIcon, XIcon } from '@primer/octicons-react'
 import { Fragment, ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MediaItem } from '../../api/jellyfin'
+import { JELLYFIN_MAX_LIMIT, MediaItem } from '../../api/jellyfin'
 import { JellyImg } from '../../components/JellyImg'
 import { Squircle } from '../../components/Squircle'
 import { TracksIcon } from '../../components/SvgIcons'
@@ -18,7 +18,7 @@ import { DropdownContext } from './DropdownContext'
 export type IMenuItems = { [x in keyof IDropdownContext['menuItems']]?: boolean }
 export type IDropdownContext = ReturnType<typeof useInitialState>
 
-type IContext = { item: MediaItem; playlistId?: string }
+type IContext = { item: MediaItem; playlistId?: string; customContainer?: string }
 
 const useInitialState = () => {
     const [isOpen, setIsOpen] = useState(false)
@@ -118,7 +118,9 @@ const useInitialState = () => {
 
     const handleInputKeyDown = useCallback(
         async (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'Enter' && playlistName.trim() && context) {
+            if (!context) return
+
+            if (e.key === 'Enter' && playlistName.trim()) {
                 const playlist = await createPlaylist(playlistName.trim())
                 await addToPlaylist(context.item, playlist.Id!)
                 setPlaylistName('')
@@ -132,8 +134,10 @@ const useInitialState = () => {
 
     const handleCreateClick = useCallback(
         async (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (!context) return
+
             e.stopPropagation()
-            if (playlistName.trim() && context) {
+            if (playlistName.trim()) {
                 const playlist = await createPlaylist(playlistName.trim())
                 await addToPlaylist(context.item, playlist.Id!)
                 setPlaylistName('')
@@ -304,7 +308,7 @@ const useInitialState = () => {
     )
 
     const expandItems = useCallback(
-        async (item: MediaItem) => {
+        async (item: MediaItem, customContainer?: string) => {
             if (item.Type === BaseItemKind.MusicAlbum) {
                 const tracks = await api.getAlbumDetails(item.Id)
                 return tracks.tracks
@@ -314,6 +318,9 @@ const useInitialState = () => {
             } else if (item.Type === BaseItemKind.Playlist) {
                 const tracks = await api.getPlaylistAllTracks(item.Id)
                 return tracks
+            } else if (customContainer === 'favorites') {
+                const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
+                return favorites
             } else {
                 return [item]
             }
@@ -423,7 +430,7 @@ const useInitialState = () => {
             next: (
                 <div
                     className="dropdown-item play-next"
-                    onClick={async () => await handlePlayNext(context!.item)}
+                    onClick={async () => context && (await handlePlayNext(context.item))}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Play next</span>
@@ -432,7 +439,7 @@ const useInitialState = () => {
             add_to_queue: (
                 <div
                     className="dropdown-item add-queue"
-                    onClick={async () => await handleAddToQueue(context!.item)}
+                    onClick={async () => context && (await handleAddToQueue(context.item))}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Add to queue</span>
@@ -441,7 +448,7 @@ const useInitialState = () => {
             remove_from_queue: (
                 <div
                     className="dropdown-item remove-queue has-removable"
-                    onClick={async () => handleRemoveFromQueue(context!.item)}
+                    onClick={async () => context && (await handleRemoveFromQueue(context.item))}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Remove from queue</span>
@@ -465,6 +472,8 @@ const useInitialState = () => {
                 <div
                     className="dropdown-item delete-playlist has-removable"
                     onClick={async () => {
+                        if (!context) return
+
                         closeDropdown()
 
                         if (context?.item.Id) {
@@ -508,7 +517,7 @@ const useInitialState = () => {
                             }
                         >
                             <div className="dropdown-menu">
-                                {context?.item?.ArtistItems?.map(artist => (
+                                {context?.item.ArtistItems?.map(artist => (
                                     <div
                                         key={artist.Id}
                                         className="dropdown-item"
@@ -525,7 +534,7 @@ const useInitialState = () => {
             view_artist: (
                 <div
                     className="dropdown-item view-artist"
-                    onClick={() => handleViewArtist(context?.item?.ArtistItems?.[0].Id)}
+                    onClick={() => handleViewArtist(context?.item.ArtistItems?.[0].Id)}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>View artist</span>
@@ -534,7 +543,7 @@ const useInitialState = () => {
             view_album: (
                 <div
                     className="dropdown-item view-album"
-                    onClick={() => handleViewAlbum(context!.item)}
+                    onClick={() => context && handleViewAlbum(context.item)}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>View album</span>
@@ -544,11 +553,10 @@ const useInitialState = () => {
                 <div
                     className="dropdown-item add-favorite"
                     onClick={async () => {
-                        closeDropdown()
+                        if (!context) return
 
-                        if (context) {
-                            await addToFavorites(context.item)
-                        }
+                        closeDropdown()
+                        await addToFavorites(context.item)
                     }}
                     onMouseEnter={closeSubDropdown}
                 >
@@ -559,11 +567,10 @@ const useInitialState = () => {
                 <div
                     className="dropdown-item remove-favorite has-removable"
                     onClick={async () => {
-                        closeDropdown()
+                        if (!context) return
 
-                        if (context) {
-                            await removeFromFavorites(context.item)
-                        }
+                        closeDropdown()
+                        await removeFromFavorites(context.item)
                     }}
                     onMouseEnter={closeSubDropdown}
                 >
@@ -621,11 +628,10 @@ const useInitialState = () => {
                                         key={playlist.Id}
                                         className="dropdown-item"
                                         onClick={async () => {
-                                            closeDropdown()
+                                            if (!context) return
 
-                                            if (context) {
-                                                await addItemsToPlaylist(await expandItems(context.item), playlist.Id)
-                                            }
+                                            closeDropdown()
+                                            await addItemsToPlaylist(await expandItems(context.item), playlist.Id)
                                         }}
                                     >
                                         {playlist.Name}
@@ -640,8 +646,9 @@ const useInitialState = () => {
                 <div
                     className="dropdown-item remove-playlist has-removable"
                     onClick={async () => {
-                        closeDropdown()
+                        if (!context) return
 
+                        closeDropdown()
                         await removeFromPlaylist(context.item, context.playlistId!)
                     }}
                     onMouseEnter={closeSubDropdown}
@@ -654,14 +661,15 @@ const useInitialState = () => {
                     <div
                         className="dropdown-item remove-song has-removable"
                         onClick={async () => {
-                            closeDropdown()
+                            if (!context) return
 
-                            if (context) {
-                                removeFromDownloads(
-                                    await expandItems(context.item),
-                                    context.item.Type === BaseItemKind.Audio ? undefined : context.item
-                                )
-                            }
+                            closeDropdown()
+                            const containerItem = context.customContainer
+                                ? await api.createCustomContainerMediaItem(context.customContainer)
+                                : context.item.Type === BaseItemKind.Audio
+                                ? undefined
+                                : context.item
+                            removeFromDownloads(await expandItems(context.item, context.customContainer), containerItem)
                         }}
                         onMouseEnter={closeSubDropdown}
                     >
@@ -675,14 +683,15 @@ const useInitialState = () => {
                     <div
                         className="dropdown-item"
                         onClick={async () => {
-                            closeDropdown()
+                            if (!context) return
 
-                            if (context) {
-                                addToDownloads(
-                                    await expandItems(context.item),
-                                    context.item.Type === BaseItemKind.Audio ? undefined : context.item
-                                )
-                            }
+                            closeDropdown()
+                            const containerItem = context.customContainer
+                                ? await api.createCustomContainerMediaItem(context.customContainer)
+                                : context.item.Type === BaseItemKind.Audio
+                                ? undefined
+                                : context.item
+                            addToDownloads(await expandItems(context.item, context.customContainer), containerItem)
                         }}
                         onMouseEnter={closeSubDropdown}
                     >
@@ -698,6 +707,7 @@ const useInitialState = () => {
         addItemsToPlaylist,
         addToDownloads,
         addToFavorites,
+        api,
         closeDropdown,
         closeSubDropdown,
         context,
@@ -734,7 +744,7 @@ const useInitialState = () => {
 
             if (subDropdown.type === 'view-artists') {
                 items =
-                    context?.item?.ArtistItems?.map(artist => (
+                    context?.item.ArtistItems?.map(artist => (
                         <div
                             key={artist.Id}
                             className="dropdown-item"
@@ -771,11 +781,10 @@ const useInitialState = () => {
                             key={playlist.Id}
                             className="dropdown-item"
                             onClick={async () => {
-                                closeDropdown()
+                                if (!context) return
 
-                                if (context) {
-                                    await addToPlaylist(context.item, playlist.Id)
-                                }
+                                closeDropdown()
+                                await addToPlaylist(context.item, playlist.Id)
                             }}
                         >
                             {playlist.Name}
@@ -821,11 +830,11 @@ const useInitialState = () => {
                 ],
                 [
                     {
-                        isVisible: !hidden?.view_artists && (context?.item?.ArtistItems?.length || 0) > 1,
+                        isVisible: !hidden?.view_artists && (context?.item.ArtistItems?.length || 0) > 1,
                         node: menuItems.view_artists,
                     },
                     {
-                        isVisible: !hidden?.view_artist && context?.item?.ArtistItems?.length === 1,
+                        isVisible: !hidden?.view_artist && context?.item.ArtistItems?.length === 1,
                         node: menuItems.view_artist,
                     },
                     {
@@ -839,7 +848,7 @@ const useInitialState = () => {
                 ],
                 [
                     {
-                        isVisible: !hidden?.add_to_favorite && !context?.item?.UserData?.IsFavorite,
+                        isVisible: !hidden?.add_to_favorite && !context?.item.UserData?.IsFavorite,
                         node: menuItems.add_to_favorite,
                     },
                     {
@@ -870,7 +879,8 @@ const useInitialState = () => {
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
                                 context?.item.Type === BaseItemKind.MusicArtist ||
-                                context?.item.Type === BaseItemKind.Playlist),
+                                context?.item.Type === BaseItemKind.Playlist ||
+                                !!context?.customContainer),
                         node: menuItems.download_song,
                     },
                 ],
@@ -899,7 +909,7 @@ const useInitialState = () => {
                 ref={menuRef}
             >
                 <div className="dropdown-menu">
-                    {isTouchDevice && context?.item && (
+                    {isTouchDevice && context && (
                         <div className="dropdown-header">
                             <div
                                 className={`container ${
