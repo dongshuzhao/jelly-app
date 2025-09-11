@@ -546,7 +546,6 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                 ? offlineUrl.type === 'm3u8'
                 : [128000, 192000, 256000, 320000].includes(bitrate)
 
-            console.log('load: ' + track.Name)
             if (isTranscoded && Hls.isSupported()) {
                 await handleHls(audio, hlsIndex, offlineUrl?.url, streamUrl, track.Id)
             } else {
@@ -782,7 +781,6 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         const nextTrack = getNextTrack()
 
         if (nextTrack) {
-            console.log('preload: ' + nextTrack.Name)
             setAudioSourceAndLoad(crossfadeRef, 1, nextTrack)
             isPreloaded.current = true
         }
