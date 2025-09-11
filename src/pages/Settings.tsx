@@ -66,8 +66,8 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
     }, [api])
 
     const handleLogout = () => {
-        playback.audioRef.current.pause()
-        playback.crossfadeRef.current.pause()
+        playback.audioRef.pause()
+        playback.crossfadeRef.pause()
         resetSessionCount()
         onLogout()
         navigate('/login')
@@ -289,6 +289,47 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                     <div className="info">
                         Smoothly transition between tracks by gradually fading out the current song while simultaneously
                         fading in the next, creating a seamless and immersive listening experience
+                    </div>
+                </div>
+            </div>
+            <div className={'section preload' + (playback.isPreloadActive ? '' : ' disabled')}>
+                <div className="primary">
+                    <div className="container">
+                        <div className="title">Preload</div>
+                    </div>
+                    <div className="options noSelect">
+                        <div className="option adjustable">
+                            <div className="number current">{playback.preloadDuration}s</div>
+                            <div className="slider">
+                                <input
+                                    type="range"
+                                    id="preload"
+                                    name="preload"
+                                    min="1"
+                                    max="12"
+                                    step="1"
+                                    value={playback.preloadDuration}
+                                    onChange={e => playback.setPreloadDuration(Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="number">12s</div>
+                        </div>
+                        <div className="option">
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={playback.isPreloadActive}
+                                    onChange={e => playback.setIsPreloadActive(e.target.checked)}
+                                ></input>
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div className="desc">
+                    <div className="info">
+                        Load the next track in advance to enable smooth playback without buffering delays, improving the
+                        listening experience especially for high-quality audio or slower connections
                     </div>
                 </div>
             </div>

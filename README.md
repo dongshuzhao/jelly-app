@@ -49,6 +49,7 @@ A lightweight & elegant music interface for Jellyfin. Made to be intuitive and m
     -   **Instant Mix:** Enjoy curated playlists directly from your music library on a standalone page.
 -   **Queue:** Effortlessly manage and reorder tracks with the enhanced and improved Queue functionality.
 -   **Crossfade:** Smoothly transition between tracks for a seamless and immersive listening experience.
+-   **Preload:** Intelligently preload the next track in advance to ensure smooth, uninterrupted playback without buffering delays.
 -   **Synchronized Lyrics:** Enjoy your favorite songs in a new way with a spectacular UI showing perfectly timed lyrics that appear line-by-line as you listen.
 -   **Smart Fetching:** Caches your music efficiently for instant, smooth playback.
 -   **Offline Sync:** Download individual songs, full albums, playlists, or artists for offline playback.

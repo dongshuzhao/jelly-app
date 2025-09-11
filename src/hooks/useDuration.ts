@@ -3,7 +3,7 @@ import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
 
 export const useDuration = () => {
     const playback = usePlaybackContext()
-    const audio = playback.audioRef.current
+    const audio = playback.audioRef
 
     const [progress, setProgress] = useState(audio.currentTime || 0)
     const [duration, setDuration] = useState(audio.duration || 0)

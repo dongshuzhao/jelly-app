@@ -360,7 +360,7 @@ export const MainContent = ({
 
 export const Progressbar = () => {
     const playback = usePlaybackContext()
-    const audio = playback.audioRef.current as HTMLAudioElement | undefined
+    const audio = playback.audioRef as HTMLAudioElement | undefined
     const progressRef = useRef<HTMLInputElement>(null)
     const trackRef = useRef<HTMLDivElement>(null)
     const bufferRef = useRef(false)

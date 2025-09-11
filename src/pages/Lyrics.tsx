@@ -5,7 +5,7 @@ import './Lyrics.css'
 
 export const Lyrics = () => {
     const playback = usePlaybackContext()
-    const audio = playback.audioRef.current as HTMLAudioElement | undefined
+    const audio = playback.audioRef as HTMLAudioElement | undefined
 
     const [currentTime, setCurrentTime] = useState<number | null>(null)
     const lineRefs = useRef<Array<HTMLDivElement | null>>([])
@@ -128,7 +128,7 @@ export const Lyrics = () => {
 
     const goToLine = useCallback(
         (index: number) => {
-            const audio = playback.audioRef.current as HTMLAudioElement | undefined
+            const audio = playback.audioRef as HTMLAudioElement | undefined
 
             if (audio && lyrics && lyrics[index]?.Start) {
                 setCurrentTime(lyrics[index].Start / 10000000)
