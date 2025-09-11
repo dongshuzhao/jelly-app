@@ -175,15 +175,17 @@ export const PlaylistTrackList = ({
 
     return (
         <ul className="playlist-tracklist noSelect">
-            <Virtuoso
-                key={playlistId}
-                data={displayItems}
-                useWindowScroll
-                itemContent={renderTrack}
-                endReached={loadMore}
-                overscan={800}
-                initialItemCount={displayItems.length}
-            />
+            {displayItems.length > 0 && (
+                <Virtuoso
+                    key={playlistId}
+                    data={displayItems}
+                    useWindowScroll
+                    itemContent={renderTrack}
+                    endReached={loadMore}
+                    overscan={800}
+                    initialItemCount={displayItems.length}
+                />
+            )}
         </ul>
     )
 }

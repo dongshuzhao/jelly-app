@@ -377,30 +377,32 @@ export const MediaList = ({
                     renderItem={renderItem}
                     activeId={activeId}
                 >
-                    <Virtuoso
-                        data={displayItems}
-                        useWindowScroll
-                        itemContent={(index, item) => {
-                            if ('isPlaceholder' in item) {
-                                return renderItem(index, item)
-                            }
+                    {displayItems.length > 0 && (
+                        <Virtuoso
+                            data={displayItems}
+                            useWindowScroll
+                            itemContent={(index, item) => {
+                                if ('isPlaceholder' in item) {
+                                    return renderItem(index, item)
+                                }
 
-                            return (
-                                <SortableItem
-                                    key={item.queueId || item.Id}
-                                    id={item.queueId || item.Id}
-                                    cb={({ listeners }) => renderItem(index, item, listeners)}
-                                />
-                            )
-                        }}
-                        endReached={loadMore}
-                        overscan={800}
-                        initialItemCount={displayItems.length}
-                    />
+                                return (
+                                    <SortableItem
+                                        key={item.queueId || item.Id}
+                                        id={item.queueId || item.Id}
+                                        cb={({ listeners }) => renderItem(index, item, listeners)}
+                                    />
+                                )
+                            }}
+                            endReached={loadMore}
+                            overscan={800}
+                            initialItemCount={displayItems.length}
+                        />
+                    )}
                 </DraggableVirtuoso>
             )}
 
-            {!isDraggable && (
+            {!isDraggable && displayItems.length > 0 && (
                 <Virtuoso
                     data={displayItems}
                     useWindowScroll
