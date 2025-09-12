@@ -56,8 +56,8 @@ export const PlaylistTrackList = ({
         [playback, infiniteData, title, disableUrl, reviver]
     )
 
-    const renderTrack = (index: number, item: MediaItem | { isPlaceholder: true }) => {
-        if ('isPlaceholder' in item) {
+    const renderTrack = (index: number, item: MediaItem | { isPlaceholder: true } | undefined) => {
+        if (!item || 'isPlaceholder' in item) {
             return (
                 <li className="track-item" ref={el => setRowRefs(index, el)}>
                     <Skeleton type="playlist" />

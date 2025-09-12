@@ -126,10 +126,10 @@ export const MediaList = ({
 
     const renderItem = (
         index: number,
-        item: MediaItem | { isPlaceholder: true },
+        item: MediaItem | { isPlaceholder: true } | undefined,
         listeners?: SyntheticListenerMap | undefined
     ) => {
-        if ('isPlaceholder' in item) {
+        if (!item || 'isPlaceholder' in item) {
             if (type === 'album') {
                 return (
                     <div className="media-item album-item" ref={el => setRowRefs(index, el)}>
