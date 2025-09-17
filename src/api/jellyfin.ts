@@ -773,6 +773,45 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         return { totalTrackCount, totalPlaytime, totalPlays }
     }
 
+    const getFavoritesTotals = async (itemKind: BaseItemKind = BaseItemKind.Audio) => {
+        const itemsApi = new ItemsApi(api.configuration)
+        const response = await itemsApi.getItems(
+            {
+                userId,
+                filters: [ItemFilter.IsFavorite],
+                includeItemTypes: [itemKind],
+                recursive: true,
+                limit: 0, // No items, just metadata
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
+        const totalTrackCount = response.data.TotalRecordCount || 0
+
+        // Fetch total playtime and plays (requires items for RunTimeTicks and PlayCount)
+        let totalPlaytime = 0
+        let totalPlays = 0
+
+        if (totalTrackCount > 0) {
+            const fullResponse = await itemsApi.getItems(
+                {
+                    userId,
+                    filters: [ItemFilter.IsFavorite],
+                    includeItemTypes: [itemKind],
+                    recursive: true,
+                    limit: JELLYFIN_MAX_LIMIT,
+                },
+                { signal: AbortSignal.timeout(20000) }
+            )
+
+            const parsedItems = await parseItemDtos(fullResponse.data.Items)
+
+            totalPlaytime = parsedItems.reduce((sum, track) => sum + (track.RunTimeTicks || 0), 0)
+            totalPlays = parsedItems.reduce((sum, track) => sum + (track.UserData?.PlayCount || 0), 0)
+        }
+
+        return { totalTrackCount, totalPlaytime, totalPlays }
+    }
+
     // Same as getPlaylistTotals but returns all tracks instead of just metadata, yes its not very efficient but it be what it be
     const getPlaylistAllTracks = async (playlistId: string) => {
         const itemsApi = new ItemsApi(api.configuration)
@@ -1109,6 +1148,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         getAllGenres,
         getAllTracks,
         getFavoriteTracks,
+        getFavoritesTotals,
         getAlbumDetails,
         getArtistDetails,
         getArtistStats,
