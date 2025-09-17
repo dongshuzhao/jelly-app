@@ -8,7 +8,7 @@ import { useJellyfinInfiniteData } from './useJellyfinInfiniteData'
 
 export const useJellyfinFavoritesData = () => {
     const api = useJellyfinContext()
-    const itemsPerPage = 1
+    const itemsPerPage = 40
     const { jellySort, jellyItemKind } = useFilterContext()
 
     const { data: totals, error: totalsError } = useQuery<

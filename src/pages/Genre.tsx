@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { MediaList } from '../components/MediaList'
 import { Squircle } from '../components/Squircle'
@@ -13,7 +13,8 @@ import './Genre.css'
 
 export const Genre = () => {
     const { genre } = useParams<{ genre: string }>()
-    const { items, infiniteData, isLoading, error, reviver, loadMore } = useJellyfinGenreTracks(genre!)
+    const { items, infiniteData, isLoading, error, reviver, loadMore, totalTrackCount, totalPlaytime, totalPlays } =
+        useJellyfinGenreTracks(genre!)
     const { setPageTitle } = usePageTitle()
     const playback = usePlaybackContext()
     const { isOpen, onContextMenu } = useDropdownContext()
@@ -27,13 +28,6 @@ export const Genre = () => {
             setPageTitle('')
         }
     }, [genre, setPageTitle])
-
-    const totalStats = useMemo(() => {
-        const totalTrackCount = items.length
-        const totalPlaytime = items.reduce((total, track) => total + (track.RunTimeTicks || 0), 0)
-
-        return { totalTrackCount, totalPlaytime }
-    }, [items])
 
     const handleMoreClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation()
@@ -54,7 +48,7 @@ export const Genre = () => {
         <div className="genre-page">
             {error && <div className="error">{error}</div>}
 
-            {totalStats && (
+            {totalTrackCount > 0 && (
                 <div className="genre-header">
                     <Squircle width={100} height={100} cornerRadius={8} className="thumbnail">
                         <div className="fallback-thumbnail">
@@ -67,17 +61,24 @@ export const Genre = () => {
                         <div className="title">{genre ? decodeURIComponent(genre) : 'Genre'}</div>
                         <div className="stats">
                             <div className="track-amount">
-                                <span className="number">{totalStats.totalTrackCount}</span>{' '}
-                                <span>{totalStats.totalTrackCount === 1 ? 'Track' : 'Tracks'}</span>
+                                <span className="number">{totalTrackCount}</span>{' '}
+                                <span>{totalTrackCount === 1 ? 'Track' : 'Tracks'}</span>
                             </div>
-                            {totalStats.totalPlaytime > 0 && (
+                            {totalPlaytime > 0 && (
                                 <>
                                     <div className="divider"></div>
                                     <div className="length">
-                                        <span className="number">
-                                            {formatDurationReadable(totalStats.totalPlaytime)}
-                                        </span>{' '}
+                                        <span className="number">{formatDurationReadable(totalPlaytime)}</span>{' '}
                                         <span>Total</span>
+                                    </div>
+                                </>
+                            )}
+                            {totalPlays > 0 && (
+                                <>
+                                    <div className="divider"></div>
+                                    <div className="plays">
+                                        <span className="number">{totalPlays}</span>{' '}
+                                        {totalPlays === 1 ? 'Play' : 'Plays'}
                                     </div>
                                 </>
                             )}
