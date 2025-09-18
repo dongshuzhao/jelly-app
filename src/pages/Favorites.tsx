@@ -39,9 +39,9 @@ export const Favorites = () => {
 
             {jellyItemKind === 'Audio' && (
                 <div className="favorites-header">
-                    <Squircle width={100} height={100} cornerRadius={8} className="thumbnail">
+                    <Squircle width={80} height={80} cornerRadius={8} className="thumbnail">
                         <div className="fallback-thumbnail">
-                            <HeartFillIcon size={32} />
+                            <HeartFillIcon size={28} />
                         </div>
                     </Squircle>
                     <div className="favorites-details">

@@ -1,25 +1,22 @@
-.favorites-page {
-    margin-top: 4px;
-}
-
 .favorites-page > .favorites-header {
     display: flex;
     align-items: center;
+    margin-top: 4px;
     margin-bottom: 14px;
 }
 
 .favorites-page > .favorites-header > .thumbnail {
     display: block;
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     border-radius: 8px;
     margin-right: 20px;
     background-color: var(--bg-color-secondary);
 }
 
 .favorites-page > .favorites-header > .thumbnail > .thumbnail {
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     object-fit: cover;
     border-radius: 8px;
 }
