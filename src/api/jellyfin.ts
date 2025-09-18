@@ -240,7 +240,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         const response = await genresApi.getGenres(
             {
                 userId,
-                sortBy: [ItemSortBy.DatePlayed],
+                sortBy: [ItemSortBy.DateCreated],
                 sortOrder: [SortOrder.Descending],
                 includeItemTypes: [BaseItemKind.Audio],
                 limit: Math.min(12, JELLYFIN_MAX_LIMIT),
