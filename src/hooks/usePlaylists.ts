@@ -4,7 +4,7 @@ import { usePatchQueries } from './usePatchQueries'
 
 export const usePlaylists = () => {
     const api = useJellyfinContext()
-    const { prependItemsToQueryData, removeItemFromQueryData } = usePatchQueries()
+    const { prependItemsToQueryData, removeItemFromQueryData, patchMediaItem } = usePatchQueries()
 
     return {
         addToPlaylist: async (item: MediaItem, playlistId: string) => {
@@ -28,6 +28,10 @@ export const usePlaylists = () => {
             const playlist = await api.getPlaylist(res.Id!)
             prependItemsToQueryData(['playlists'], [playlist])
             return playlist
+        },
+        renamePlaylist: async (playlistId: string, newName: string) => {
+            await api.renamePlaylist(playlistId, newName)
+            patchMediaItem(playlistId, item => ({ ...item, Name: newName }))
         },
         deletePlaylist: async (playlistId: string) => {
             await api.deletePlaylist(playlistId)

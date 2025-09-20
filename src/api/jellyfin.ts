@@ -1135,6 +1135,21 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         return response.data
     }
 
+    const renamePlaylist = async (playlistId: string, newName: string) => {
+        const playlistApi = new PlaylistsApi(api.configuration)
+
+        const response = await playlistApi.updatePlaylist({
+            playlistId,
+            // Seems to be bugged, need to pass both
+            updatePlaylistDto: {
+                Name: newName,
+                IsPublic: false,
+            },
+        })
+
+        return response.data
+    }
+
     const deletePlaylist = async (playlistId: string) => {
         const response = await fetch(`${serverUrl}/Items/${playlistId}`, {
             method: 'DELETE',
@@ -1240,6 +1255,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         addToPlaylist,
         removeFromPlaylist,
         createPlaylist,
+        renamePlaylist,
         deletePlaylist,
         getTrackInfo,
         getMediaItem,

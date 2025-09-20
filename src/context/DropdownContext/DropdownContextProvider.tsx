@@ -26,7 +26,7 @@ const useInitialState = () => {
     const [context, setContext] = useState<IContext>()
     const [subDropdown, setSubDropdown] = useState<{
         isOpen: boolean
-        type: 'view-artists' | 'add-playlist' | ''
+        type: 'view-artists' | 'add-playlist' | 'rename-playlist' | ''
         flipX: boolean
         flipY: boolean
         width: number
@@ -55,11 +55,13 @@ const useInitialState = () => {
     const { playlists } = useJellyfinPlaylistsList()
     const { addToFavorites, removeFromFavorites } = useFavorites()
     const { addToDownloads, removeFromDownloads } = useDownloadContext()
-    const { addToPlaylist, addItemsToPlaylist, removeFromPlaylist, createPlaylist, deletePlaylist } = usePlaylists()
+    const { addToPlaylist, addItemsToPlaylist, removeFromPlaylist, createPlaylist, deletePlaylist, renamePlaylist } =
+        usePlaylists()
 
     const menuRef = useRef<HTMLDivElement>(null)
     const subMenuRef = useRef<HTMLDivElement>(null)
     const [playlistName, setPlaylistName] = useState<string>('')
+    const [renamePlaylistName, setRenamePlaylistName] = useState<string>('')
 
     // Resize handler to update isTouchDevice and reset dropdown on viewport changes
     useEffect(() => {
@@ -116,6 +118,11 @@ const useInitialState = () => {
         []
     )
 
+    const handleRenameInputChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => setRenamePlaylistName(e.target.value),
+        []
+    )
+
     const handleInputKeyDown = useCallback(
         async (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (!context) return
@@ -132,6 +139,21 @@ const useInitialState = () => {
         [addToPlaylist, closeDropdown, context, createPlaylist, playlistName]
     )
 
+    const handleRenameInputKeyDown = useCallback(
+        async (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (!context) return
+
+            if (e.key === 'Enter' && renamePlaylistName.trim()) {
+                await renamePlaylist(context.item.Id, renamePlaylistName.trim())
+                setRenamePlaylistName('')
+                closeDropdown()
+            } else if (e.key === 'Escape') {
+                setRenamePlaylistName('')
+            }
+        },
+        [closeDropdown, context, renamePlaylist, renamePlaylistName]
+    )
+
     const handleCreateClick = useCallback(
         async (e: React.MouseEvent<HTMLButtonElement>) => {
             if (!context) return
@@ -145,6 +167,20 @@ const useInitialState = () => {
             }
         },
         [addToPlaylist, closeDropdown, context, createPlaylist, playlistName]
+    )
+
+    const handleRenameClick = useCallback(
+        async (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (!context) return
+
+            e.stopPropagation()
+            if (renamePlaylistName.trim()) {
+                await renamePlaylist(context.item.Id, renamePlaylistName.trim())
+                setRenamePlaylistName('')
+                closeDropdown()
+            }
+        },
+        [closeDropdown, context, renamePlaylist, renamePlaylistName]
     )
 
     useEffect(() => {
@@ -180,7 +216,7 @@ const useInitialState = () => {
     }, [closeDropdown, isOpen])
 
     const openSubDropdown = useCallback(
-        (type: 'view-artists' | 'add-playlist', e: React.MouseEvent<HTMLDivElement>) => {
+        (type: 'view-artists' | 'add-playlist' | 'rename-playlist', e: React.MouseEvent<HTMLDivElement>) => {
             const rect = e.currentTarget.getBoundingClientRect()
             setSubDropdown({
                 isOpen: true,
@@ -193,8 +229,13 @@ const useInitialState = () => {
                 measured: false,
                 triggerRect: rect,
             })
+
+            // Set initial value for rename playlist
+            if (type === 'rename-playlist' && context?.item.Name) {
+                setRenamePlaylistName(context.item.Name)
+            }
         },
-        []
+        [context?.item.Name]
     )
 
     useLayoutEffect(() => {
@@ -494,6 +535,54 @@ const useInitialState = () => {
                     <span>Delete playlist</span>
                 </div>
             ),
+            rename_playlist: (
+                <div
+                    className={`dropdown-item rename-playlist has-sub-menu${
+                        subDropdown.isOpen && subDropdown.type === 'rename-playlist' ? ' active' : ''
+                    }`}
+                    onMouseEnter={!isTouchDevice ? e => openSubDropdown('rename-playlist', e) : undefined}
+                    onClick={isTouchDevice ? e => openSubDropdown('rename-playlist', e) : undefined}
+                >
+                    <span>Rename playlist</span>
+                    <ChevronRightIcon size={12} className="icon" />
+                    {!isTouchDevice && subDropdown.isOpen && subDropdown.type === 'rename-playlist' && (
+                        <div
+                            ref={subMenuRef}
+                            className={`sub-dropdown${subDropdown.flipX ? ' flip-x' : ''}${
+                                subDropdown.flipY ? ' flip-y' : ''
+                            }`}
+                            style={
+                                !subDropdown.measured || !subDropdown.triggerRect
+                                    ? { visibility: 'hidden', position: 'absolute', left: '-9999px', top: '-9999px' }
+                                    : {
+                                          position: 'absolute',
+                                          top: `${subDropdown.top}px`,
+                                          left: subDropdown.flipX ? 'auto' : '100%',
+                                          right: subDropdown.flipX ? '100%' : 'auto',
+                                      }
+                            }
+                        >
+                            <div className="dropdown-menu">
+                                <div className="dropdown-item">
+                                    <div className="playlist-input-container">
+                                        <input
+                                            value={renamePlaylistName}
+                                            onChange={handleRenameInputChange}
+                                            onKeyDown={handleRenameInputKeyDown}
+                                            onClick={e => e.stopPropagation()}
+                                            placeholder="Rename playlist..."
+                                            className={`playlist-input${renamePlaylistName.trim() ? ' has-text' : ''}`}
+                                        />
+                                        <button className="create-btn" onClick={handleRenameClick}>
+                                            Rename
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ),
             view_artists: (
                 <div
                     className={`dropdown-item view-artists has-sub-menu${
@@ -729,6 +818,9 @@ const useInitialState = () => {
         handleInputKeyDown,
         handlePlayNext,
         handleRemoveFromQueue,
+        handleRenameClick,
+        handleRenameInputChange,
+        handleRenameInputKeyDown,
         handleViewAlbum,
         handleViewArtist,
         isTouchDevice,
@@ -739,6 +831,7 @@ const useInitialState = () => {
         removeFromDownloads,
         removeFromFavorites,
         removeFromPlaylist,
+        renamePlaylistName,
         subDropdown.flipX,
         subDropdown.flipY,
         subDropdown.isOpen,
@@ -800,6 +893,26 @@ const useInitialState = () => {
                             {playlist.Name}
                         </div>
                     )),
+                ]
+            } else if (subDropdown.type === 'rename-playlist') {
+                items = [
+                    <div key="rename-playlist-input-item" className="dropdown-item">
+                        <div className="playlist-input-container">
+                            <input
+                                value={renamePlaylistName}
+                                onChange={handleRenameInputChange}
+                                onKeyDown={handleRenameInputKeyDown} // Calls closeDropdown on Enter
+                                onClick={e => e.stopPropagation()}
+                                placeholder="Rename playlist..."
+                                className={`playlist-input${renamePlaylistName.trim() ? ' has-text' : ''}`}
+                            />
+                            <button className="create-btn" onClick={handleRenameClick}>
+                                {' '}
+                                {/* Calls closeDropdown */}
+                                Rename
+                            </button>
+                        </div>
+                    </div>,
                 ]
             }
             return items
@@ -884,6 +997,10 @@ const useInitialState = () => {
                                 context?.item.Type === BaseItemKind.MusicGenre ||
                                 context?.customContainer === 'favorites'),
                         node: menuItems.add_to_playlist,
+                    },
+                    {
+                        isVisible: !hidden?.rename_playlist && context?.item.Type === BaseItemKind.Playlist,
+                        node: menuItems.rename_playlist,
                     },
                     {
                         isVisible: !hidden?.delete_playlist && context?.item.Type === BaseItemKind.Playlist,
@@ -1019,6 +1136,9 @@ const useInitialState = () => {
         handleCreateClick,
         handleInputChange,
         handleInputKeyDown,
+        handleRenameClick,
+        handleRenameInputChange,
+        handleRenameInputKeyDown,
         handleViewArtist,
         hidden?.add_to_favorite,
         hidden?.add_to_playlist,
@@ -1030,6 +1150,7 @@ const useInitialState = () => {
         hidden?.remove_from_favorite,
         hidden?.remove_from_playlist,
         hidden?.remove_from_queue,
+        hidden?.rename_playlist,
         hidden?.view_album,
         hidden?.view_artist,
         hidden?.view_artists,
@@ -1045,6 +1166,7 @@ const useInitialState = () => {
         menuItems.remove_from_favorite,
         menuItems.remove_from_playlist,
         menuItems.remove_from_queue,
+        menuItems.rename_playlist,
         menuItems.view_album,
         menuItems.view_artist,
         menuItems.view_artists,
@@ -1052,6 +1174,7 @@ const useInitialState = () => {
         playlists,
         position.x,
         position.y,
+        renamePlaylistName,
         subDropdown.isOpen,
         subDropdown.type,
     ])

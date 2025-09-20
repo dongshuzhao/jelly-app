@@ -49,8 +49,12 @@ export const Playlist = () => {
         return <Loader />
     }
 
-    if (error || !playlistData) {
+    if (error) {
         return <div className="error">{error || 'Playlist not found'}</div>
+    }
+
+    if (!playlistData) {
+        return <div className="error">No tracks were found</div>
     }
 
     const handleMoreClick = (e: React.MouseEvent<HTMLDivElement>) => {
