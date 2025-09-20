@@ -123,6 +123,10 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
     const [reviver, setReviver] = useState<IReviver>(JSON.parse(localStorage.getItem('reviver') || '{}') || {})
 
     const [bitrate, setBitrate] = useState(Number(localStorage.getItem('bitrate')))
+    const [maxWidth, setMaxWidth] = useState(() => {
+        const saved = localStorage.getItem('maxWidth')
+        return saved || '800'
+    })
     const needsReloadRef = useRef(false)
 
     const audioStorage = useAudioStorageContext()
@@ -132,6 +136,10 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
     useEffect(() => {
         localStorage.setItem('bitrate', bitrate.toString())
     }, [bitrate])
+
+    useEffect(() => {
+        localStorage.setItem('maxWidth', maxWidth)
+    }, [maxWidth])
 
     // Shuffle is normally handled by passing 'random' to queryFn but when this is not an infinite query we have to manually handle it
     const isManualShuffle = useMemo(() => {
@@ -1076,6 +1084,8 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         setRememberFilters,
         warnBeforeOverwriteQueue,
         setWarnBeforeOverwriteQueue,
+        maxWidth,
+        setMaxWidth,
         markAsManuallyAdded,
     }
 }

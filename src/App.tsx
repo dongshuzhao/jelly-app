@@ -16,6 +16,7 @@ import { DropdownContextProvider } from './context/DropdownContext/DropdownConte
 import { HistoryContextProvider } from './context/HistoryContext/HistoryContextProvider'
 import { JellyfinContextProvider } from './context/JellyfinContext/JellyfinContextProvider'
 import { PageTitleProvider } from './context/PageTitleContext/PageTitleProvider'
+import { usePlaybackContext } from './context/PlaybackContext/PlaybackContext'
 import { PlaybackContextProvider } from './context/PlaybackContext/PlaybackContextProvider'
 import { ScrollContextProvider } from './context/ScrollContext/ScrollContextProvider'
 import { useSidenavContext } from './context/SidenavContext/SidenavContext'
@@ -196,8 +197,18 @@ const MainLayout = ({ auth, handleLogout }: { auth: AuthData; handleLogout: () =
 
     const { showSidenav, toggleSidenav } = useSidenavContext()
     const dropdownContext = useDropdownContext()
+    const { maxWidth } = usePlaybackContext()
     const isDropdownOpen = dropdownContext?.isOpen || false
     const isTouchDevice = dropdownContext?.isTouchDevice || false
+
+    useEffect(() => {
+        const root = document.documentElement
+        if (maxWidth === 'responsive') {
+            root.style.setProperty('--interface-max-width', 'none')
+        } else {
+            root.style.setProperty('--interface-max-width', `${maxWidth}px`)
+        }
+    }, [maxWidth])
 
     const memoSettings = useCallback(() => {
         return <Settings onLogout={handleLogout} />
