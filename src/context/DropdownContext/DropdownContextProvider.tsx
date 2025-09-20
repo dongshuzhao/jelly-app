@@ -321,9 +321,8 @@ const useInitialState = () => {
             } else if (customContainer === 'favorites') {
                 const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
                 return favorites
-            } else if (customContainer?.startsWith('genre_')) {
-                const genreName = customContainer.replace('genre_', '')
-                const genreTracks = await api.getGenreTracks(genreName, 0, JELLYFIN_MAX_LIMIT)
+            } else if (item.Type === BaseItemKind.MusicGenre) {
+                const genreTracks = await api.getGenreTracks(item.Name, 0, JELLYFIN_MAX_LIMIT)
                 return genreTracks
             } else {
                 return [item]
@@ -807,7 +806,8 @@ const useInitialState = () => {
                             !hidden?.next &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre),
                         node: menuItems.next,
                     },
                     {
@@ -815,7 +815,8 @@ const useInitialState = () => {
                             !hidden?.add_to_queue &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre),
                         node: menuItems.add_to_queue,
                     },
                     {
@@ -824,7 +825,8 @@ const useInitialState = () => {
                             !hidden?.remove_from_queue &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre),
                         node: menuItems.remove_from_queue,
                     },
                     {
@@ -868,7 +870,8 @@ const useInitialState = () => {
                             !hidden?.add_to_playlist &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre),
                         node: menuItems.add_to_playlist,
                     },
                     {
@@ -884,6 +887,7 @@ const useInitialState = () => {
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
                                 context?.item.Type === BaseItemKind.MusicArtist ||
                                 context?.item.Type === BaseItemKind.Playlist ||
+                                context?.item.Type === BaseItemKind.MusicGenre ||
                                 !!context?.customContainer),
                         node: menuItems.download_song,
                     },

@@ -83,6 +83,10 @@ export const Home = () => {
                     isLoading={isLoading}
                     type="genre"
                     title={'Home - Recent Genres'}
+                    hidden={{
+                        add_to_favorite: true,
+                        remove_from_favorite: true,
+                    }}
                 />
             </div>
         </div>

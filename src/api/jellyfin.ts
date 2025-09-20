@@ -1,7 +1,12 @@
 import { Jellyfin } from '@jellyfin/sdk'
-import { InstantMixApi, LyricsApi, MediaInfoApi, PlaylistsApi } from '@jellyfin/sdk/lib/generated-client'
+import {
+    InstantMixApi,
+    LyricsApi,
+    MediaInfoApi,
+    MusicGenresApi,
+    PlaylistsApi,
+} from '@jellyfin/sdk/lib/generated-client'
 import { ArtistsApi } from '@jellyfin/sdk/lib/generated-client/api/artists-api'
-import { GenresApi } from '@jellyfin/sdk/lib/generated-client/api/genres-api'
 import { ItemsApi } from '@jellyfin/sdk/lib/generated-client/api/items-api'
 import { PlaystateApi } from '@jellyfin/sdk/lib/generated-client/api/playstate-api'
 import { SessionApi } from '@jellyfin/sdk/lib/generated-client/api/session-api'
@@ -174,8 +179,8 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
     }
 
     const searchGenres = async (searchTerm: string, limit = 20) => {
-        const genresApi = new GenresApi(api.configuration)
-        const response = await genresApi.getGenres(
+        const genresApi = new MusicGenresApi(api.configuration)
+        const response = await genresApi.getMusicGenres(
             {
                 userId,
                 searchTerm,
@@ -236,8 +241,8 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
     }
 
     const getRecentGenres = async () => {
-        const genresApi = new GenresApi(api.configuration)
-        const response = await genresApi.getGenres(
+        const genresApi = new MusicGenresApi(api.configuration)
+        const response = await genresApi.getMusicGenres(
             {
                 userId,
                 sortBy: [ItemSortBy.DateCreated],
@@ -366,8 +371,8 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         sortBy: ItemSortBy[] = [ItemSortBy.SortName],
         sortOrder: SortOrder[] = [SortOrder.Ascending]
     ) => {
-        const genresApi = new GenresApi(api.configuration)
-        const response = await genresApi.getGenres(
+        const genresApi = new MusicGenresApi(api.configuration)
+        const response = await genresApi.getMusicGenres(
             {
                 userId,
                 sortBy,
@@ -405,7 +410,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
 
     const getInstantMixFromSong = async (songId: string) => {
         const itemsApi = new InstantMixApi(api.configuration)
-        const response = await itemsApi.getInstantMixFromSong(
+        const response = await itemsApi.getInstantMixFromItem(
             {
                 userId,
                 itemId: songId,
@@ -700,23 +705,26 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         sortOrder: SortOrder[] = [SortOrder.Descending]
     ) => {
         const itemsApi = new ItemsApi(api.configuration)
-        const response = await itemsApi.getItems(
-            {
-                userId,
-                sortBy,
-                sortOrder,
-                includeItemTypes: [BaseItemKind.Audio],
-                recursive: true,
-                genres: [genre],
-                startIndex,
-                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
-            },
-            { signal: AbortSignal.timeout(20000) }
-        )
+        const [genreResponse, genresResponse] = await Promise.all([
+            getGenreByName(genre),
+            itemsApi.getItems(
+                {
+                    userId,
+                    sortBy,
+                    sortOrder,
+                    includeItemTypes: [BaseItemKind.Audio],
+                    recursive: true,
+                    genres: [genre],
+                    startIndex,
+                    limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
+                },
+                { signal: AbortSignal.timeout(20000) }
+            ),
+        ])
 
-        const items = await parseItemDtos(response.data.Items)
+        const items = await parseItemDtos(genresResponse.data.Items)
 
-        syncDownloadsById(`JMA_CUSTOM_GENRE_${genre.toUpperCase()}`, items)
+        syncDownloads(genreResponse, items)
 
         return items
     }
@@ -1171,6 +1179,18 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         return parseItemDto(response.data)
     }
 
+    const getGenreByName = async (genreName: string) => {
+        const genresApi = new MusicGenresApi(api.configuration)
+        const response = await genresApi.getMusicGenre(
+            {
+                userId,
+                genreName,
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
+        return await parseItemDto(response.data)
+    }
+
     return {
         loginToJellyfin,
         searchItems,
@@ -1225,5 +1245,6 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         getMediaItem,
         createCustomContainerMediaItem,
         getRecentGenres,
+        getGenreByName,
     }
 }

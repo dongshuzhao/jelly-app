@@ -1,6 +1,7 @@
-import { BookmarkFillIcon } from '@primer/octicons-react'
 import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { JellyImg } from '../components/JellyImg'
+import { Loader } from '../components/Loader'
 import { MediaList } from '../components/MediaList'
 import { Squircle } from '../components/Squircle'
 import { MoreIcon } from '../components/SvgIcons'
@@ -8,7 +9,7 @@ import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { usePageTitle } from '../context/PageTitleContext/PageTitleContext'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
 import { useJellyfinGenreTracks } from '../hooks/Jellyfin/Infinite/useJellyfinGenreTracks'
-import { useJellyfinCustomContainerItem } from '../hooks/Jellyfin/useJellyfinCustomContainerItem'
+import { useJellyfinGenre } from '../hooks/Jellyfin/useJellyfinGenre'
 import { formatDurationReadable } from '../utils/formatDurationReadable'
 import './Genre.css'
 
@@ -19,7 +20,7 @@ export const Genre = () => {
     const { setPageTitle } = usePageTitle()
     const playback = usePlaybackContext()
     const { isOpen, onContextMenu } = useDropdownContext()
-    const { customItem: genreCustomItem } = useJellyfinCustomContainerItem(genre ? `genre_${genre}` : '')
+    const { mediaItem: currentGenre } = useJellyfinGenre(genre || '')
 
     useEffect(() => {
         if (genre) {
@@ -30,16 +31,18 @@ export const Genre = () => {
         }
     }, [genre, setPageTitle])
 
+    if (isLoading && items.length === 0) {
+        return <Loader />
+    }
+
+    if (error || !currentGenre) {
+        return <div className="error">{error || 'Genre not found'}</div>
+    }
+
     const handleMoreClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation()
 
-        if (!genreCustomItem) {
-            console.warn('Genre custom item not ready yet')
-            return
-        }
-
-        onContextMenu(e, { item: genreCustomItem, customContainer: `genre_${genre}` }, true, {
-            instant_mix: true,
+        onContextMenu(e, { item: currentGenre }, true, {
             add_to_favorite: true,
             remove_from_favorite: true,
         })
@@ -52,9 +55,7 @@ export const Genre = () => {
             {totalTrackCount > 0 && (
                 <div className="genre-header">
                     <Squircle width={80} height={80} cornerRadius={8} className="thumbnail">
-                        <div className="fallback-thumbnail">
-                            <BookmarkFillIcon size={28} />
-                        </div>
+                        <JellyImg item={currentGenre} type={'Primary'} width={100} height={100} />
                     </Squircle>
                     <div className="genre-details">
                         <div className="title">{genre ? decodeURIComponent(genre) : 'Genre'}</div>

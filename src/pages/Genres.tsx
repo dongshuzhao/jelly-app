@@ -14,6 +14,10 @@ export const Genres = () => {
                 title={'Genres'}
                 reviver={reviver}
                 loadMore={loadMore}
+                hidden={{
+                    add_to_favorite: true,
+                    remove_from_favorite: true,
+                }}
             />
             {error && <div className="error">{error}</div>}
         </div>
