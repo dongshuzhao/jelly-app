@@ -461,6 +461,24 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                             <div className="number">Responsive</div>
                         </div>
                     </div>
+
+                    <div className="options noSelect">
+                        <div className={`option classic active`}>
+                            <div className="desc">Classic</div>
+                        </div>
+                        <div className={`option small`}>
+                            <div className="desc">Small</div>
+                        </div>
+                        <div className={`option medium`}>
+                            <div className="desc">Medium</div>
+                        </div>
+                        <div className={`option large`}>
+                            <div className="desc">Large</div>
+                        </div>
+                        <div className={`option wide`}>
+                            <div className="desc">Wide</div>
+                        </div>
+                    </div>
                 </div>
                 <div className="desc">
                     <div className="info">
