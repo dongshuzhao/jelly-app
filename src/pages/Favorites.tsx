@@ -1,5 +1,5 @@
 import { HeartFillIcon } from '@primer/octicons-react'
-import { MediaList } from '../components/MediaList'
+import { PlaylistTrackList } from '../components/PlaylistTrackList'
 import { Squircle } from '../components/Squircle'
 import { MoreIcon } from '../components/SvgIcons'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
@@ -97,11 +97,10 @@ export const Favorites = () => {
                 </div>
             )}
 
-            <MediaList
-                items={items}
+            <PlaylistTrackList
+                tracks={items}
                 infiniteData={infiniteData}
                 isLoading={isLoading}
-                type={jellyItemKind === 'Audio' ? 'song' : jellyItemKind === 'MusicAlbum' ? 'album' : 'artist'}
                 reviver={reviver}
                 loadMore={loadMore}
                 title={'Favorites'}
