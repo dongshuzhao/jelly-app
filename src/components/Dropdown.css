@@ -306,6 +306,10 @@
         margin-bottom: 0;
     }
 
+    .dropdown > .dropdown-menu > .dropdown-header > .container.genre > .info > .title {
+        margin-bottom: 0;
+    }
+
     .dropdown > .dropdown-menu > .dropdown-header > .container > .info > .title > .text {
         white-space: nowrap;
         text-overflow: ellipsis;

@@ -70,8 +70,8 @@ export const Home = () => {
             <div className="section">
                 <div className="section-header">
                     <div className="container">
-                        <div className="section_title">Recent Genres</div>
-                        <div className="section_desc">Genres you might like</div>
+                        <div className="section_title">Explore Genres</div>
+                        <div className="section_desc">New genres from recently added media</div>
                     </div>
                     <Link to="/genres" className="see-more noSelect">
                         See more
