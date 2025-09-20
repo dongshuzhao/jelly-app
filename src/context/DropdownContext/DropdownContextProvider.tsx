@@ -318,12 +318,12 @@ const useInitialState = () => {
             } else if (item.Type === BaseItemKind.Playlist) {
                 const tracks = await api.getPlaylistAllTracks(item.Id)
                 return tracks
-            } else if (customContainer === 'favorites') {
-                const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
-                return favorites
             } else if (item.Type === BaseItemKind.MusicGenre) {
                 const genreTracks = await api.getGenreTracks(item.Name, 0, JELLYFIN_MAX_LIMIT)
                 return genreTracks
+            } else if (customContainer === 'favorites') {
+                const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
+                return favorites
             } else {
                 return [item]
             }
@@ -333,6 +333,8 @@ const useInitialState = () => {
 
     const handlePlayNext = useCallback(
         async (item: MediaItem) => {
+            if (!context) return
+
             const insertionPoint = (playback.currentTrackIndex ?? -1) + 1
 
             await playback.updateCurrentPlaylist(async pages => {
@@ -343,7 +345,7 @@ const useInitialState = () => {
 
                     for (let trackIndex = 0; trackIndex < page.length; trackIndex++) {
                         if (trackCounter === insertionPoint) {
-                            const expandedItems = await expandItems(item)
+                            const expandedItems = await expandItems(item, context.customContainer)
                             const markedItems = playback.markAsManuallyAdded(expandedItems)
 
                             return [
@@ -357,7 +359,7 @@ const useInitialState = () => {
                     }
                 }
 
-                const expandedItems = await expandItems(item)
+                const expandedItems = await expandItems(item, context.customContainer)
                 const markedItems = playback.markAsManuallyAdded(expandedItems)
 
                 return [
@@ -372,12 +374,14 @@ const useInitialState = () => {
 
             closeDropdown()
         },
-        [closeDropdown, expandItems, playback]
+        [closeDropdown, context, expandItems, playback]
     )
 
     const handleAddToQueue = useCallback(
         async (item: MediaItem) => {
-            const expandedItems = await expandItems(item)
+            if (!context) return
+
+            const expandedItems = await expandItems(item, context.customContainer)
             const markedItems = playback.markAsManuallyAdded(expandedItems)
 
             await playback.updateCurrentPlaylist(async pages => [
@@ -391,7 +395,7 @@ const useInitialState = () => {
 
             closeDropdown()
         },
-        [closeDropdown, expandItems, playback]
+        [closeDropdown, context, expandItems, playback]
     )
 
     const handleRemoveFromQueue = useCallback(
@@ -634,7 +638,10 @@ const useInitialState = () => {
                                             if (!context) return
 
                                             closeDropdown()
-                                            await addItemsToPlaylist(await expandItems(context.item), playlist.Id)
+                                            await addItemsToPlaylist(
+                                                await expandItems(context.item, context.customContainer),
+                                                playlist.Id
+                                            )
                                         }}
                                     >
                                         {playlist.Name}
@@ -807,7 +814,8 @@ const useInitialState = () => {
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
                                 context?.item.Type === BaseItemKind.MusicArtist ||
-                                context?.item.Type === BaseItemKind.MusicGenre),
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.next,
                     },
                     {
@@ -816,7 +824,8 @@ const useInitialState = () => {
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
                                 context?.item.Type === BaseItemKind.MusicArtist ||
-                                context?.item.Type === BaseItemKind.MusicGenre),
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.add_to_queue,
                     },
                     {
@@ -826,7 +835,8 @@ const useInitialState = () => {
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
                                 context?.item.Type === BaseItemKind.MusicArtist ||
-                                context?.item.Type === BaseItemKind.MusicGenre),
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.remove_from_queue,
                     },
                     {
@@ -871,7 +881,8 @@ const useInitialState = () => {
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
                                 context?.item.Type === BaseItemKind.MusicArtist ||
-                                context?.item.Type === BaseItemKind.MusicGenre),
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.add_to_playlist,
                     },
                     {
