@@ -52,63 +52,60 @@ export const Genre = () => {
         <div className="genre-page">
             {error && <div className="error">{error}</div>}
 
-            {totalTrackCount > 0 && (
-                <div className="genre-header">
-                    <Squircle width={80} height={80} cornerRadius={8} className="thumbnail">
-                        <JellyImg item={currentGenre} type={'Primary'} width={100} height={100} />
-                    </Squircle>
-                    <div className="genre-details">
-                        <div className="title">{genre ? decodeURIComponent(genre) : 'Genre'}</div>
-                        <div className="stats">
-                            <div className="track-amount">
-                                <span className="number">{totalTrackCount}</span>{' '}
-                                <span>{totalTrackCount === 1 ? 'Track' : 'Tracks'}</span>
-                            </div>
-                            {totalPlaytime > 0 && (
-                                <>
-                                    <div className="divider"></div>
-                                    <div className="length">
-                                        <span className="number">{formatDurationReadable(totalPlaytime)}</span>{' '}
-                                        <span>Total</span>
-                                    </div>
-                                </>
-                            )}
-                            {totalPlays > 0 && (
-                                <>
-                                    <div className="divider"></div>
-                                    <div className="plays">
-                                        <span className="number">{totalPlays}</span>{' '}
-                                        {totalPlays === 1 ? 'Play' : 'Plays'}
-                                    </div>
-                                </>
-                            )}
+            <div className="genre-header">
+                <Squircle width={80} height={80} cornerRadius={8} className="thumbnail">
+                    <JellyImg item={currentGenre} type={'Primary'} width={100} height={100} />
+                </Squircle>
+                <div className="genre-details">
+                    <div className="title">{genre ? decodeURIComponent(genre) : 'Genre'}</div>
+                    <div className="stats">
+                        <div className="track-amount">
+                            <span className="number">{totalTrackCount}</span>{' '}
+                            <span>{totalTrackCount === 1 ? 'Track' : 'Tracks'}</span>
                         </div>
-                        <div className="actions noSelect">
-                            <div className="primary">
-                                <div
-                                    className="play-playlist"
-                                    onClick={() => {
-                                        if (
-                                            playback.setCurrentPlaylistSimple({
-                                                playlist: items,
-                                                title: genre ? `Genre: ${decodeURIComponent(genre)}` : 'Genre',
-                                            })
-                                        ) {
-                                            playback.playTrack(0)
-                                        }
-                                    }}
-                                >
-                                    <div className="play-icon" />
-                                    <div className="text">Play</div>
+                        {totalPlaytime > 0 && (
+                            <>
+                                <div className="divider"></div>
+                                <div className="length">
+                                    <span className="number">{formatDurationReadable(totalPlaytime)}</span>{' '}
+                                    <span>Total</span>
                                 </div>
+                            </>
+                        )}
+                        {totalPlays > 0 && (
+                            <>
+                                <div className="divider"></div>
+                                <div className="plays">
+                                    <span className="number">{totalPlays}</span> {totalPlays === 1 ? 'Play' : 'Plays'}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    <div className="actions noSelect">
+                        <div className="primary">
+                            <div
+                                className="play-playlist"
+                                onClick={() => {
+                                    if (
+                                        playback.setCurrentPlaylistSimple({
+                                            playlist: items,
+                                            title: genre ? `Genre: ${decodeURIComponent(genre)}` : 'Genre',
+                                        })
+                                    ) {
+                                        playback.playTrack(0)
+                                    }
+                                }}
+                            >
+                                <div className="play-icon" />
+                                <div className="text">Play</div>
                             </div>
-                            <div className={`more ${isOpen ? 'active' : ''}`} onClick={handleMoreClick} title="More">
-                                <MoreIcon width={14} height={14} />
-                            </div>
+                        </div>
+                        <div className={`more ${isOpen ? 'active' : ''}`} onClick={handleMoreClick} title="More">
+                            <MoreIcon width={14} height={14} />
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
 
             <PlaylistTrackList
                 tracks={items}
