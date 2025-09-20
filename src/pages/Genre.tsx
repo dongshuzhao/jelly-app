@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { JellyImg } from '../components/JellyImg'
 import { Loader } from '../components/Loader'
-import { MediaList } from '../components/MediaList'
+import { PlaylistTrackList } from '../components/PlaylistTrackList'
 import { Squircle } from '../components/Squircle'
 import { MoreIcon } from '../components/SvgIcons'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
@@ -110,11 +110,10 @@ export const Genre = () => {
                 </div>
             )}
 
-            <MediaList
-                items={items}
+            <PlaylistTrackList
+                tracks={items}
                 infiniteData={infiniteData}
                 isLoading={isLoading}
-                type="song"
                 title={genre ? `Genre: ${decodeURIComponent(genre)}` : 'Genres'}
                 reviver={reviver}
                 loadMore={loadMore}

@@ -282,8 +282,8 @@ export const MediaList = ({
                     onTouchMove={dropdown.onTouchClear}
                     onTouchEnd={dropdown.onTouchClear}
                 >
-                    <Squircle width={46} height={46} cornerRadius={6} className="media-state">
-                        <JellyImg item={item} type={'Primary'} width={46} height={46} />
+                    <Squircle width={36} height={36} cornerRadius={8} className="media-state">
+                        <JellyImg item={item} type={'Primary'} width={36} height={36} />
                     </Squircle>
                     <div className="media-details">
                         <span className="song-name">{item.Name || 'Unknown Genre'}</span>

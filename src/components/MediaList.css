@@ -40,7 +40,7 @@
 .media-list .media-item.genre-item > .media-state {
     width: 36px;
     height: 36px;
-    border-radius: 20px;
+    border-radius: 8px;
 }
 
 .media-list .media-item > .media-state > .thumbnail {
@@ -61,7 +61,7 @@
 .media-list .media-item.genre-item > .media-state > .thumbnail {
     width: 36px;
     height: 36px;
-    border-radius: 20px;
+    border-radius: 8px;
 }
 
 .media-list .media-item > .media-state > .fallback-thumbnail {
@@ -83,7 +83,7 @@
 .media-list .media-item.genre-item > .media-state > .fallback-thumbnail {
     width: 36px;
     height: 36px;
-    border-radius: 20px;
+    border-radius: 8px;
 }
 
 .media-list .media-item > .media-state > .fallback-thumbnail > svg {
