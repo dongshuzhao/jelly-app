@@ -959,19 +959,20 @@ const useInitialState = () => {
                                             </span>
                                         )}
                                     </div>
-                                    {context.item.Type !== BaseItemKind.MusicArtist && (
-                                        <div className="desc">
-                                            {context.item.Type === BaseItemKind.Audio
-                                                ? context.item.Artists?.join(', ') || 'Unknown Artist'
-                                                : context.item.Type === BaseItemKind.MusicAlbum
-                                                ? context.item.AlbumArtist || 'Unknown Artist'
-                                                : context.item.Type === BaseItemKind.Playlist
-                                                ? `${context.item.ChildCount || 0} Track${
-                                                      context.item.ChildCount === 1 ? '' : 's'
-                                                  }`
-                                                : 'Unknown'}
-                                        </div>
-                                    )}
+                                    {context.item.Type !== BaseItemKind.MusicArtist &&
+                                        context.item.Type !== BaseItemKind.MusicGenre && (
+                                            <div className="desc">
+                                                {context.item.Type === BaseItemKind.Audio
+                                                    ? context.item.Artists?.join(', ') || 'Unknown Artist'
+                                                    : context.item.Type === BaseItemKind.MusicAlbum
+                                                    ? context.item.AlbumArtist || 'Unknown Artist'
+                                                    : context.item.Type === BaseItemKind.Playlist
+                                                    ? `${context.item.ChildCount || 0} Track${
+                                                          context.item.ChildCount === 1 ? '' : 's'
+                                                      }`
+                                                    : 'Unknown'}
+                                            </div>
+                                        )}
                                 </div>
                             </div>
                             <div className="actions">

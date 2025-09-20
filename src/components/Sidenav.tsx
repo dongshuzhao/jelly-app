@@ -278,13 +278,13 @@ export const Sidenav = (props: { username: string }) => {
                                                                 ? 'album'
                                                                 : item.Type?.toLowerCase()
                                                         }/${
-                                                            item.Type === BaseItemKind.Genre
+                                                            item.Type === BaseItemKind.MusicGenre
                                                                 ? encodeURIComponent(item.Name)
                                                                 : item.Id
                                                         }`}
                                                         onClick={closeSidenav}
                                                         className={`result ${itemClass}`}
-                                                        {...(item.Type !== BaseItemKind.Genre && {
+                                                        {...(item.Type !== BaseItemKind.MusicGenre && {
                                                             onContextMenu: e =>
                                                                 dropdown.onContextMenu(e, { item: item }),
                                                             onTouchStart: e => dropdown.onTouchStart(e, { item }),
@@ -319,7 +319,7 @@ export const Sidenav = (props: { username: string }) => {
                                                             </div>
                                                         )}
 
-                                                        {item.Type === BaseItemKind.Genre && (
+                                                        {item.Type === BaseItemKind.MusicGenre && (
                                                             <div className="type genre">
                                                                 <div className="icon" title="Genre">
                                                                     <BookmarkFillIcon size={14} />
