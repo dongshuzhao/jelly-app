@@ -929,6 +929,8 @@ const useInitialState = () => {
                                         ? 'artist'
                                         : context.item.Type === BaseItemKind.Playlist
                                         ? 'playlist'
+                                        : context.item.Type === BaseItemKind.MusicGenre
+                                        ? 'genre'
                                         : 'unknown'
                                 }`}
                             >
