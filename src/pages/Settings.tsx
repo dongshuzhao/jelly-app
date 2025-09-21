@@ -28,29 +28,6 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
 
     const [clearing, setClearing] = useState(false)
 
-    const [maxWidthPreview, setMaxWidthPreview] = useState<string | null>(null)
-    const maxWidthOptions = ['800', '1000', '1200', '1400', '1600', 'responsive']
-
-    const getCurrentSliderValue = (maxWidth: string) => {
-        const index = maxWidthOptions.indexOf(maxWidth)
-        return index === -1 ? maxWidthOptions.length - 1 : index
-    }
-
-    const handleMaxWidthChange = (
-        e: React.FormEvent<HTMLInputElement> | React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>,
-        isFinal = false
-    ) => {
-        const value = Number((e.target as HTMLInputElement).value)
-        const newMaxWidth = maxWidthOptions[value]
-
-        if (isFinal) {
-            playback.setMaxWidth(newMaxWidth)
-            setMaxWidthPreview(null)
-        } else {
-            setMaxWidthPreview(newMaxWidth)
-        }
-    }
-
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -437,45 +414,36 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                     <div className="container">
                         <div className="title">Layout</div>
                     </div>
-                    <div className="options noSelect">
-                        <div className="option adjustable">
-                            <div className="number current">
-                                {(maxWidthPreview || playback.maxWidth) === 'responsive'
-                                    ? 'Responsive'
-                                    : `${maxWidthPreview || playback.maxWidth}px`}
-                            </div>
-                            <div className="slider">
-                                <input
-                                    type="range"
-                                    id="maxWidth"
-                                    name="maxWidth"
-                                    min="0"
-                                    max={maxWidthOptions.length - 1}
-                                    step="1"
-                                    value={getCurrentSliderValue(maxWidthPreview || playback.maxWidth)}
-                                    onInput={e => handleMaxWidthChange(e, false)}
-                                    onMouseUp={e => handleMaxWidthChange(e, true)}
-                                    onTouchEnd={e => handleMaxWidthChange(e, true)}
-                                />
-                            </div>
-                            <div className="number">Responsive</div>
-                        </div>
-                    </div>
 
                     <div className="options noSelect">
-                        <div className={`option classic active`}>
+                        <div
+                            className={`option classic ${playback.maxWidth === '800' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('800')}
+                        >
                             <div className="desc">Classic</div>
                         </div>
-                        <div className={`option small`}>
+                        <div
+                            className={`option small ${playback.maxWidth === '1000' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('1000')}
+                        >
                             <div className="desc">Small</div>
                         </div>
-                        <div className={`option medium`}>
+                        <div
+                            className={`option medium ${playback.maxWidth === '1200' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('1200')}
+                        >
                             <div className="desc">Medium</div>
                         </div>
-                        <div className={`option large`}>
+                        <div
+                            className={`option large ${playback.maxWidth === '1400' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('1400')}
+                        >
                             <div className="desc">Large</div>
                         </div>
-                        <div className={`option wide`}>
+                        <div
+                            className={`option wide ${playback.maxWidth === 'responsive' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('responsive')}
+                        >
                             <div className="desc">Wide</div>
                         </div>
                     </div>
