@@ -400,7 +400,7 @@ const useInitialState = () => {
                     }
                 }
 
-                if (insertionPoint === trackCounter) {
+                if (insertionPoint >= trackCounter) {
                     const expandedItems = await expandItems(item, context.customContainer)
                     const markedItems = playback.markAsManuallyAdded(expandedItems)
 
