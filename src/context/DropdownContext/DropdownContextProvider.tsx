@@ -400,6 +400,13 @@ const useInitialState = () => {
                     }
                 }
 
+                if (insertionPoint === trackCounter) {
+                    const expandedItems = await expandItems(item, context.customContainer)
+                    const markedItems = playback.markAsManuallyAdded(expandedItems)
+
+                    return [...pages.slice(0, pages.length - 1), [...pages[pages.length - 1], ...markedItems]]
+                }
+
                 const expandedItems = await expandItems(item, context.customContainer)
                 const markedItems = playback.markAsManuallyAdded(expandedItems)
 
