@@ -76,7 +76,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
     )
     const [preloadDuration, setPreloadDuration] = useState(() => {
         const savedDuration = localStorage.getItem('preloadDuration')
-        return savedDuration ? Number(savedDuration) : 4
+        return savedDuration ? Number(savedDuration) : 6
     })
 
     const isPreloaded = useRef(false)

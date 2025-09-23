@@ -203,8 +203,8 @@ const MainLayout = ({ auth, handleLogout }: { auth: AuthData; handleLogout: () =
 
     useEffect(() => {
         const root = document.documentElement
-        if (maxWidth === 'responsive') {
-            root.style.setProperty('--interface-max-width', 'none')
+        if (maxWidth === 'wide') {
+            root.style.setProperty('--interface-max-width', '100%')
         } else {
             root.style.setProperty('--interface-max-width', `${maxWidth}px`)
         }

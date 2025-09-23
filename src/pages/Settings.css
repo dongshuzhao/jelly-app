@@ -50,7 +50,7 @@
     row-gap: 4px;
 }
 
-.settings-page > .section.appearance > .options {
+.settings-page > .section.appearance > .container > .options.primary {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -58,11 +58,11 @@
     margin-top: 4px;
 }
 
-.settings-page > .section.appearance > .options > .option {
+.settings-page > .section.appearance > .container > .options.primary > .option {
     cursor: pointer;
 }
 
-.settings-page > .section.appearance > .options > .option > .visual {
+.settings-page > .section.appearance > .container > .options.primary > .option > .visual {
     position: relative;
     width: 98px;
     height: 62px;
@@ -73,24 +73,24 @@
     transition: outline-color 0.2s ease-out;
 }
 
-.settings-page > .section.appearance > .options > .option.active > .visual {
+.settings-page > .section.appearance > .container > .options.primary > .option.active > .visual {
     outline-color: var(--brand-color);
 }
 
-.settings-page > .section.appearance > .options > .option.light > .visual {
+.settings-page > .section.appearance > .container > .options.primary > .option.light > .visual {
     background-image: url(/light-variant-tiny.webp);
 }
 
-.settings-page > .section.appearance > .options > .option.dark > .visual {
+.settings-page > .section.appearance > .container > .options.primary > .option.dark > .visual {
     background-image: url(/dark-variant-tiny.webp);
 }
 
-.settings-page > .section.appearance > .options > .option.system > .visual {
+.settings-page > .section.appearance > .container > .options.primary > .option.system > .visual {
     background-image: url(/dark-light-variant-tiny-split.webp);
     background-image: url(/light-dark-variant-tiny-split.webp);
 }
 
-.settings-page > .section.appearance > .options > .option > .desc {
+.settings-page > .section.appearance > .container > .options.primary > .option > .desc {
     font-size: 0.75rem;
     font-weight: 600;
     text-align: center;
@@ -99,8 +99,39 @@
     transition: color 0.2s ease-out;
 }
 
-.settings-page > .section.appearance > .options > .option.active > .desc {
+.settings-page > .section.appearance > .container > .options.primary > .option.active > .desc {
     color: var(--font-color);
+}
+
+.settings-page > .section.appearance > .container > .options.secondary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    border-radius: 10px;
+    background-color: var(--bg-color-secondary);
+}
+
+.settings-page > .section.appearance > .container > .options.secondary > .option {
+    cursor: pointer;
+    padding: 8px 22.5px;
+    border-right: 1px solid var(--border-color);
+}
+
+.settings-page > .section.appearance > .container > .options.secondary > .option:last-of-type {
+    border-right: none;
+}
+
+.settings-page > .section.appearance > .container > .options.secondary > .option > .desc {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--font-color-tertiary);
+    transition: color 0.2s ease-out;
+}
+
+.settings-page > .section.appearance > .container > .options.secondary > .option.active > .desc {
+    color: var(--brand-color);
 }
 
 /* Quality */
@@ -450,26 +481,6 @@
     gap: 8px;
 }
 
-/* UI Settings */
-.settings-page > .section.ui-settings > .inner:not(:last-child) {
-    margin-bottom: 10px;
-}
-
-.settings-page > .section.ui-settings .desc > .subtitle {
-    margin-bottom: 0;
-}
-
-.settings-page > .section.ui-settings .desc > .subdesc {
-    color: var(--font-color-tertiary);
-}
-
-.settings-page > .section.ui-settings > .inner > .container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
 /* About and Session */
 .settings-page > .section .desc {
     font-size: 0.75rem;
@@ -502,44 +513,41 @@
     color: var(--font-color-tertiary);
 }
 
-/* Layout */
-.settings-page > .section.layout > .primary > .container > .title {
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 8px;
+/* Interface */
+.settings-page > .section.interface-ui > .inner:not(:last-child) {
+    margin-bottom: 10px;
 }
 
-.settings-page > .section.layout > .primary > .options {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 20px;
+.settings-page > .section.interface-ui .desc > .subtitle {
+    margin-bottom: 0;
+}
+
+.settings-page > .section.interface-ui .desc > .subdesc {
+    color: var(--font-color-tertiary);
+}
+
+.settings-page > .section.interface-ui > .inner {
     width: 100%;
 }
 
-.settings-page > .section.layout > .primary > .options > .option {
-    cursor: pointer;
-    flex: 1;
-    justify-content: center;
-    padding: 8px 16px;
-    border-radius: 8px;
-    outline: 2px solid rgba(0, 0, 0, 0);
-    background-color: var(--bg-color-secondary);
-    transition: opacity 0.2s ease-out, outline-color 0.2s ease-out;
+.settings-page > .section.interface-ui > .inner > .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
-.settings-page > .section.layout > .primary > .options > .option.active {
-    outline-color: var(--brand-color);
-}
+/* Responsive */
+@media only screen and (max-width: 390px) {
+    .settings-page > .section.appearance > .container > .options.secondary {
+        gap: 10px;
+        border-radius: unset;
+        background-color: unset;
+    }
 
-.settings-page > .section.layout > .primary > .options > .option > .desc {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-align: center;
-    color: var(--font-color-tertiary);
-    transition: color 0.2s ease-out;
-}
-
-.settings-page > .section.layout > .primary > .options > .option.active > .desc {
-    color: var(--brand-color);
+    .settings-page > .section.appearance > .container > .options.secondary > .option {
+        border-radius: 10px;
+        border-right: unset;
+        background-color: var(--bg-color-secondary);
+    }
 }
