@@ -2,7 +2,6 @@ import { HeartFillIcon } from '@primer/octicons-react'
 import { InfiniteData } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Virtuoso } from 'react-virtuoso'
 import { MediaItem } from '../api/jellyfin'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
@@ -15,6 +14,7 @@ import './PlaylistTrackList.css'
 import { Skeleton } from './Skeleton'
 import { Squircle } from './Squircle'
 import { DeletingIcon, DownloadedIcon, DownloadingIcon, PlaystateAnimationTracklist } from './SvgIcons'
+import { VirtuosoWindow } from './VirtuosoWindow'
 
 export const PlaylistTrackList = ({
     tracks,
@@ -175,17 +175,13 @@ export const PlaylistTrackList = ({
 
     return (
         <ul className="playlist-tracklist noSelect">
-            {displayItems.length > 0 && (
-                <Virtuoso
-                    key={playlistId}
-                    data={displayItems}
-                    useWindowScroll
-                    itemContent={renderTrack}
-                    endReached={loadMore}
-                    overscan={800}
-                    initialItemCount={displayItems.length}
-                />
-            )}
+            <VirtuosoWindow
+                key={playlistId}
+                data={displayItems}
+                itemContent={renderTrack}
+                endReached={loadMore}
+                overscan={800}
+            />
         </ul>
     )
 }

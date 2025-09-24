@@ -17,7 +17,6 @@ import { HeartFillIcon } from '@primer/octicons-react'
 import { InfiniteData } from '@tanstack/react-query'
 import { ReactNode, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Virtuoso } from 'react-virtuoso'
 import { MediaItem } from '../api/jellyfin'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { IMenuItems } from '../context/DropdownContext/DropdownContextProvider'
@@ -30,6 +29,7 @@ import { IReviver } from './PlaybackManager'
 import { Skeleton } from './Skeleton'
 import { Squircle } from './Squircle'
 import { DeletingIcon, DownloadedIcon, DownloadingIcon, PlaystateAnimationMedalist } from './SvgIcons'
+import { VirtuosoWindow } from './VirtuosoWindow'
 
 export const MediaList = ({
     items = [],
@@ -377,40 +377,29 @@ export const MediaList = ({
                     renderItem={renderItem}
                     activeId={activeId}
                 >
-                    {displayItems.length > 0 && (
-                        <Virtuoso
-                            data={displayItems}
-                            useWindowScroll
-                            itemContent={(index, item) => {
-                                if ('isPlaceholder' in item) {
-                                    return renderItem(index, item)
-                                }
+                    <VirtuosoWindow
+                        data={displayItems}
+                        itemContent={(index, item) => {
+                            if ('isPlaceholder' in item) {
+                                return renderItem(index, item)
+                            }
 
-                                return (
-                                    <SortableItem
-                                        key={item.queueId || item.Id}
-                                        id={item.queueId || item.Id}
-                                        cb={({ listeners }) => renderItem(index, item, listeners)}
-                                    />
-                                )
-                            }}
-                            endReached={loadMore}
-                            overscan={800}
-                            initialItemCount={displayItems.length}
-                        />
-                    )}
+                            return (
+                                <SortableItem
+                                    key={item.queueId || item.Id}
+                                    id={item.queueId || item.Id}
+                                    cb={({ listeners }) => renderItem(index, item, listeners)}
+                                />
+                            )
+                        }}
+                        endReached={loadMore}
+                        overscan={800}
+                    />
                 </DraggableVirtuoso>
             )}
 
-            {!isDraggable && displayItems.length > 0 && (
-                <Virtuoso
-                    data={displayItems}
-                    useWindowScroll
-                    itemContent={renderItem}
-                    endReached={loadMore}
-                    overscan={800}
-                    initialItemCount={displayItems.length}
-                />
+            {!isDraggable && (
+                <VirtuosoWindow data={displayItems} itemContent={renderItem} endReached={loadMore} overscan={800} />
             )}
         </ul>
     )
