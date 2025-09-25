@@ -26,8 +26,8 @@ export const VirtuosoWindow = (virtuosoProps: IVirtuosoProps) => {
             }
         }
 
-        window.addEventListener('scroll', onScroll, { passive: true })
-        return () => window.removeEventListener('scroll', onScroll)
+        window.addEventListener('scrollend', onScroll, { passive: true })
+        return () => window.removeEventListener('scrollend', onScroll)
     }, [initialOffset])
 
     return (
