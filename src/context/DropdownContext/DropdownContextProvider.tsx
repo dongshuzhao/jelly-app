@@ -1077,8 +1077,25 @@ const useInitialState = () => {
                                     useSquircle={context.item.Type !== BaseItemKind.MusicArtist}
                                 >
                                     {context.item && (
-                                        <JellyImg item={context.item} type={'Primary'} width={36} height={36} />
+                                        <>
+                                            {context.item.Id === 'JMA_CUSTOM_FAVORITES' && (
+                                                <div className="fallback-thumbnail">
+                                                    <HeartFillIcon />
+                                                </div>
+                                            )}
+
+                                            {context.item.Id !== 'JMA_CUSTOM_FAVORITES' && (
+                                                <JellyImg
+                                                    data-fav={context.item.Id}
+                                                    item={context.item}
+                                                    type={'Primary'}
+                                                    width={36}
+                                                    height={36}
+                                                />
+                                            )}
+                                        </>
                                     )}
+
                                     {!context.item && (
                                         <div className="fallback-thumbnail">
                                             <TracksIcon width="50%" height="50%" />
@@ -1097,7 +1114,8 @@ const useInitialState = () => {
                                         )}
                                     </div>
                                     {context.item.Type !== BaseItemKind.MusicArtist &&
-                                        context.item.Type !== BaseItemKind.MusicGenre && (
+                                        context.item.Type !== BaseItemKind.MusicGenre &&
+                                        context.item.Id !== 'JMA_CUSTOM_FAVORITES' && (
                                             <div className="desc">
                                                 {context.item.Type === BaseItemKind.Audio
                                                     ? context.item.Artists?.join(', ') || 'Unknown Artist'

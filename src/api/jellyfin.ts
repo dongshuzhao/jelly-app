@@ -109,12 +109,12 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
     }
 
     // Helper function to create fake MediaItem for custom containers
-    const createCustomContainerMediaItem = async (customContainer: string) => {
+    const createCustomContainerMediaItem = async (customContainer: string, customContainerTitle?: string) => {
         const id = `JMA_CUSTOM_${customContainer.toUpperCase()}`
 
         return await parseItemDto({
             Id: id,
-            Name: id,
+            Name: customContainerTitle || id,
         })
     }
 
