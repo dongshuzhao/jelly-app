@@ -17,7 +17,7 @@ export const Favorites = () => {
     const { jellyItemKind } = useFilterContext()
     const playback = usePlaybackContext()
     const { isOpen, onContextMenu } = useDropdownContext()
-    const { customItem: favoritesCustomItem } = useJellyfinCustomContainerItem('favorites', 'Favorites')
+    const { customItem: favoritesCustomItem } = useJellyfinCustomContainerItem('favorites', 'Favorite Songs')
 
     const handleMoreClick = (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation()

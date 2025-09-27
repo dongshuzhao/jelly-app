@@ -1079,8 +1079,8 @@ const useInitialState = () => {
                                     {context.item && (
                                         <>
                                             {context.item.Id === 'JMA_CUSTOM_FAVORITES' && (
-                                                <div className="fallback-thumbnail">
-                                                    <HeartFillIcon />
+                                                <div className="art">
+                                                    <HeartFillIcon size={16} />
                                                 </div>
                                             )}
 

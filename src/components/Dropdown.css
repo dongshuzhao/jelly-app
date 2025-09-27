@@ -288,6 +288,21 @@
         margin-left: -4%;
     }
 
+    .dropdown > .dropdown-menu > .dropdown-header > .container > .thumbnail > .art {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+        background-color: var(--bg-color-tertiary);
+    }
+
+    .dropdown > .dropdown-menu > .dropdown-header > .container > .thumbnail > .art > svg {
+        color: var(--brand-color);
+        opacity: 0.8;
+    }
+
     .dropdown > .dropdown-menu > .dropdown-header > .container > .info {
         overflow: hidden;
     }
