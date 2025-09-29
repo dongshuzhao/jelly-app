@@ -55,8 +55,7 @@ const useInitialState = () => {
     const { playlists } = useJellyfinPlaylistsList()
     const { addToFavorites, removeFromFavorites } = useFavorites()
     const { addToDownloads, removeFromDownloads } = useDownloadContext()
-    const { addToPlaylist, addItemsToPlaylist, removeFromPlaylist, createPlaylist, deletePlaylist, renamePlaylist } =
-        usePlaylists()
+    const { addItemsToPlaylist, removeFromPlaylist, createPlaylist, deletePlaylist, renamePlaylist } = usePlaylists()
 
     const menuRef = useRef<HTMLDivElement>(null)
     const subMenuRef = useRef<HTMLDivElement>(null)
@@ -1157,10 +1156,11 @@ const useInitialState = () => {
             </div>
         )
     }, [
-        addToPlaylist,
+        addItemsToPlaylist,
         closeDropdown,
         closeSubDropdown,
         context,
+        expandItems,
         handleCreateClick,
         handleInputChange,
         handleInputKeyDown,
