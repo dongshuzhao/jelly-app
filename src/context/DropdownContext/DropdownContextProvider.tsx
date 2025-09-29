@@ -123,20 +123,44 @@ const useInitialState = () => {
         []
     )
 
+    const expandItems = useCallback(
+        async (item: MediaItem, customContainer?: string) => {
+            if (item.Type === BaseItemKind.MusicAlbum) {
+                const tracks = await api.getAlbumDetails(item.Id)
+                return tracks.tracks
+            } else if (item.Type === BaseItemKind.MusicArtist) {
+                const tracks = await api.getArtistDetails(item.Id)
+                return tracks.tracks
+            } else if (item.Type === BaseItemKind.Playlist) {
+                const tracks = await api.getPlaylistAllTracks(item.Id)
+                return tracks
+            } else if (item.Type === BaseItemKind.MusicGenre) {
+                const genreTracks = await api.getGenreTracks(item.Name, 0, JELLYFIN_MAX_LIMIT)
+                return genreTracks
+            } else if (customContainer === 'favorites') {
+                const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
+                return favorites
+            } else {
+                return [item]
+            }
+        },
+        [api]
+    )
+
     const handleInputKeyDown = useCallback(
         async (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (!context) return
 
             if (e.key === 'Enter' && playlistName.trim()) {
                 const playlist = await createPlaylist(playlistName.trim())
-                await addToPlaylist(context.item, playlist.Id!)
+                await addItemsToPlaylist(await expandItems(context.item, context.customContainer), playlist.Id!)
                 setPlaylistName('')
                 closeDropdown()
             } else if (e.key === 'Escape') {
                 setPlaylistName('')
             }
         },
-        [addToPlaylist, closeDropdown, context, createPlaylist, playlistName]
+        [addItemsToPlaylist, closeDropdown, context, createPlaylist, expandItems, playlistName]
     )
 
     const handleRenameInputKeyDown = useCallback(
@@ -161,12 +185,12 @@ const useInitialState = () => {
             e.stopPropagation()
             if (playlistName.trim()) {
                 const playlist = await createPlaylist(playlistName.trim())
-                await addToPlaylist(context.item, playlist.Id!)
+                await addItemsToPlaylist(await expandItems(context.item, context.customContainer), playlist.Id!)
                 setPlaylistName('')
                 closeDropdown()
             }
         },
-        [addToPlaylist, closeDropdown, context, createPlaylist, playlistName]
+        [addItemsToPlaylist, closeDropdown, context, createPlaylist, expandItems, playlistName]
     )
 
     const handleRenameClick = useCallback(
@@ -346,30 +370,6 @@ const useInitialState = () => {
             })
         },
         [isTouchDevice, setDisabled]
-    )
-
-    const expandItems = useCallback(
-        async (item: MediaItem, customContainer?: string) => {
-            if (item.Type === BaseItemKind.MusicAlbum) {
-                const tracks = await api.getAlbumDetails(item.Id)
-                return tracks.tracks
-            } else if (item.Type === BaseItemKind.MusicArtist) {
-                const tracks = await api.getArtistDetails(item.Id)
-                return tracks.tracks
-            } else if (item.Type === BaseItemKind.Playlist) {
-                const tracks = await api.getPlaylistAllTracks(item.Id)
-                return tracks
-            } else if (item.Type === BaseItemKind.MusicGenre) {
-                const genreTracks = await api.getGenreTracks(item.Name, 0, JELLYFIN_MAX_LIMIT)
-                return genreTracks
-            } else if (customContainer === 'favorites') {
-                const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
-                return favorites
-            } else {
-                return [item]
-            }
-        },
-        [api]
     )
 
     const handlePlayNext = useCallback(
@@ -894,7 +894,10 @@ const useInitialState = () => {
                                 if (!context) return
 
                                 closeDropdown()
-                                await addToPlaylist(context.item, playlist.Id)
+                                await addItemsToPlaylist(
+                                    await expandItems(context.item, context.customContainer),
+                                    playlist.Id
+                                )
                             }}
                         >
                             {playlist.Name}
