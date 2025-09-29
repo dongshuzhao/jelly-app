@@ -276,6 +276,8 @@ export const Sidenav = (props: { username: string }) => {
                                                                 ? 'artist'
                                                                 : item.Type === BaseItemKind.MusicAlbum
                                                                 ? 'album'
+                                                                : item.Type === BaseItemKind.MusicGenre
+                                                                ? 'genre'
                                                                 : item.Type?.toLowerCase()
                                                         }/${
                                                             item.Type === BaseItemKind.MusicGenre
