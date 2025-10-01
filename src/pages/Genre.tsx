@@ -20,7 +20,7 @@ export const Genre = () => {
     const { setPageTitle } = usePageTitle()
     const playback = usePlaybackContext()
     const { isOpen, onContextMenu } = useDropdownContext()
-    const { mediaItem: currentGenre } = useJellyfinGenre(genre || '')
+    const { mediaItem: currentGenre, loading: currentGenreLoading } = useJellyfinGenre(genre || '')
 
     useEffect(() => {
         if (genre) {
@@ -32,6 +32,10 @@ export const Genre = () => {
     }, [genre, setPageTitle])
 
     if (isLoading && items.length === 0) {
+        return <Loader />
+    }
+
+    if (currentGenreLoading) {
         return <Loader />
     }
 
