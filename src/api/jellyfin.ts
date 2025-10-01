@@ -1091,11 +1091,10 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
     const addToPlaylist = async (playlistId: string, itemIds: string[]) => {
         const playlistApi = new PlaylistsApi(api.configuration)
 
-        const response = await playlistApi.addItemToPlaylist(
+        const response = await playlistApi.updatePlaylist(
             {
-                userId,
                 playlistId,
-                ids: itemIds,
+                updatePlaylistDto: { Ids: itemIds },
             },
             { signal: AbortSignal.timeout(20000) }
         )
