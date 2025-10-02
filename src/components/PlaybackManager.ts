@@ -366,9 +366,26 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
     // Track user-initiated pause to prevent unwanted auto-resume on devicechange
     const lastUserPauseRef = useRef<number>(0)
 
+    // Track previous track and last reported stopped track to avoid duplicate reports
+    const previousTrackRef = useRef<MediaItem | undefined>(undefined)
+    const lastStoppedTrackIdRef = useRef<string | undefined>(undefined)
+
     const currentTrack = useMemo<MediaItem | undefined>(() => {
         return tmpShuffleTrackRef.current || items[currentTrackIndex.index] || undefined
     }, [currentTrackIndex.index, items])
+
+    // Helper function to report playback stopped, avoiding duplicate reports
+    const reportTrackStopped = useCallback(
+        (track: MediaItem | undefined, currentTime: number, signal?: AbortSignal) => {
+            if (!track || track.Id === lastStoppedTrackIdRef.current) {
+                return
+            }
+
+            lastStoppedTrackIdRef.current = track.Id
+            api.reportPlaybackStopped(track.Id, currentTime, signal)
+        },
+        [api]
+    )
 
     useEffect(() => {
         if (isManualShuffle) {
@@ -581,10 +598,11 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
 
         let localAudioRef = audioRef
 
-        if (isPlaying) {
-            // If the playback stopped request fails, we can still continue playing the new track
-            api.reportPlaybackStopped(currentTrack.Id, localAudioRef.currentTime, signal)
+        if (isPlaying && previousTrackRef.current) {
+            reportTrackStopped(previousTrackRef.current, localAudioRef.currentTime, signal)
         }
+
+        previousTrackRef.current = currentTrack
 
         try {
             if (isPreloaded.current) {
@@ -649,6 +667,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         currentTrack,
         isCrossfadeActive,
         isPlaying,
+        reportTrackStopped,
         setAudioSourceAndLoad,
         shiftAudioQueue,
         shiftHlsQueue,
@@ -1003,13 +1022,13 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         const handleEnded = async () => {
             if (!currentTrack || currentTrackIndex.index === -1 || !items || items.length === 0) {
                 if (currentTrack) {
-                    api.reportPlaybackStopped(currentTrack.Id, audioRef.currentTime)
+                    reportTrackStopped(currentTrack, audioRef.currentTime)
                 }
 
                 return
             }
 
-            api.reportPlaybackStopped(currentTrack.Id, audioRef.currentTime)
+            reportTrackStopped(currentTrack, audioRef.currentTime)
 
             if (repeat === 'one') {
                 playTrack()
@@ -1023,15 +1042,26 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         return () => {
             audioRef.removeEventListener('ended', handleEnded)
         }
-    }, [api, audioRef, currentTrack, currentTrackIndex.index, items, nextTrack, playTrack, repeat, shiftAudioQueue])
+    }, [
+        api,
+        audioRef,
+        currentTrack,
+        currentTrackIndex.index,
+        items,
+        nextTrack,
+        playTrack,
+        repeat,
+        reportTrackStopped,
+        shiftAudioQueue,
+    ])
 
     useEffect(() => {
         if (clearOnLogout && currentTrack) {
-            api.reportPlaybackStopped(currentTrack.Id, audioRef.currentTime)
+            reportTrackStopped(currentTrack, audioRef.currentTime)
             setCurrentTrackIndex({ index: -1 })
             audioRef.pause()
         }
-    }, [api, audioRef, clearOnLogout, currentTrack])
+    }, [api, audioRef, clearOnLogout, currentTrack, reportTrackStopped])
 
     return {
         currentTrack,
