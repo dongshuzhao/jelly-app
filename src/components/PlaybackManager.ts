@@ -609,6 +609,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                 isPreloaded.current = false
 
                 if (!isCrossfadeActive) {
+                    localAudioRef.pause()
                     shiftAudioQueue()
                     shiftHlsQueue()
                     localAudioRef = audioQueue.current[0]
