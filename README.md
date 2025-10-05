@@ -155,6 +155,36 @@ You can also build Jelly Music App using Docker.
         -p 80:80 jelly-music-app:latest
     ```
 
+#### Docker Compose
+
+For easier container management, you can use Docker Compose. A `docker-compose.yaml` file is provided in the repository with sensible defaults.
+
+1.  Copy the example environment file and customize it for your setup:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  Edit the `.env` file with your Jellyfin server URL and preferences:
+
+    ```env
+    JELLYAPP_PORT=80
+    JELLYAPP_DEFAULT_URL=https://demo.jellyfin.org/stable
+    JELLYAPP_LOCK_URL=true
+    ```
+
+3.  Start the container using Docker Compose:
+
+    ```bash
+    docker-compose up -d
+    ```
+
+The `docker-compose.yaml` file uses environment variables with the following defaults:
+
+-   `JELLYAPP_PORT`: External port to expose (default: `80`)
+-   `JELLYAPP_DEFAULT_URL`: Default Jellyfin server URL (default: `https://demo.jellyfin.org/stable`)
+-   `JELLYAPP_LOCK_URL`: Lock the Jellyfin URL input (default: `false`)
+
 ### App Configuration
 
 App configuration can be modified by editing the `config.json` file during the build process or in the release files. When using Docker, configurations can be provided as environment variables. The available configuration options are as follows:

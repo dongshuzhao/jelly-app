@@ -1,0 +1,10 @@
+services:
+    jelly-music-app:
+        image: ghcr.io/stannnnn/jelly-music-app:latest
+        container_name: jelly-music-app
+        ports:
+            - ${JELLYAPP_PORT:-80}:80
+        restart: unless-stopped
+        environment:
+            - DEFAULT_JELLYFIN_URL=${JELLYAPP_DEFAULT_URL:-https://demo.jellyfin.org/stable}
+            - LOCK_JELLYFIN_URL=${JELLYAPP_LOCK_URL:-false}
