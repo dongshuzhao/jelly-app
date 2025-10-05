@@ -597,6 +597,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         const signal = abortControllerRef.current.signal
 
         let localAudioRef = audioRef
+        let localCrossfadeRef = crossfadeRef
 
         if (isPlaying && previousTrackRef.current) {
             reportTrackStopped(previousTrackRef.current, localAudioRef.currentTime, signal)
@@ -609,10 +610,10 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                 isPreloaded.current = false
 
                 if (!isCrossfadeActive) {
-                    localAudioRef.pause()
                     shiftAudioQueue()
                     shiftHlsQueue()
                     localAudioRef = audioQueue.current[0]
+                    localCrossfadeRef = audioQueue.current[1]
                 }
             } else {
                 await setAudioSourceAndLoad(localAudioRef, 0, currentTrack)
@@ -623,6 +624,10 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                 setTimeout(async () => {
                     if (userInteracted) {
                         await localAudioRef.play()
+
+                        if (!isCrossfadeActive) {
+                            localCrossfadeRef.pause()
+                        }
                     }
                 })
             } else {
@@ -634,6 +639,10 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                         try {
                             if (userInteracted) {
                                 await localAudioRef.play()
+
+                                if (!isCrossfadeActive) {
+                                    localCrossfadeRef.pause()
+                                }
                             }
                         } catch (e) {
                             reject(e)
@@ -665,6 +674,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
     }, [
         api,
         audioRef,
+        crossfadeRef,
         currentTrack,
         isCrossfadeActive,
         isPlaying,
