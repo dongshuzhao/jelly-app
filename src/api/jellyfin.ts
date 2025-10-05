@@ -1195,14 +1195,30 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
 
     const getGenreByName = async (genreName: string) => {
         const genresApi = new MusicGenresApi(api.configuration)
-        const response = await genresApi.getMusicGenre(
-            {
-                userId,
-                genreName,
-            },
-            { signal: AbortSignal.timeout(20000) }
-        )
-        return await parseItemDto(response.data)
+
+        try {
+            const response = await genresApi.getMusicGenre(
+                {
+                    userId,
+                    genreName,
+                },
+                { signal: AbortSignal.timeout(20000) }
+            )
+            if (response.data) {
+                return await parseItemDto(response.data)
+            }
+        } catch (error) {
+            console.error('Failed to get genre by name, trying search fallback:', error)
+        }
+
+        // Fallback to searchGenres
+        const genres = await searchGenres(genreName, 1)
+
+        if (genres.length > 0) {
+            return genres[0]
+        }
+
+        throw new Error(`Genre "${genreName}" not found`)
     }
 
     return {
