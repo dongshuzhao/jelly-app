@@ -660,12 +660,13 @@ body.lockscroll {
     height: 10px;
     margin-top: -4px;
     transform: scaleY(0.6);
-    transition: transform 0.1s linear;
+    transform-origin: bottom;
+    transition: transform 0.16s ease-out;
 }
 
 .main > .main_footer > .playback > .progress:hover,
 .main > .main_footer > .playback > .progress:active {
-    transform: scaleY(1);
+    transform: scaleY(1.6);
 }
 
 /* Progress loading */
@@ -760,8 +761,7 @@ body.lockscroll {
     display: flex;
     align-items: center;
     position: relative;
-    padding: 14px 20px;
-    padding-bottom: 18px;
+    padding: 16px 20px;
     /* Help with CJK letter spacing */
     max-height: 82px;
 }
@@ -1225,7 +1225,12 @@ body.lockscroll {
     }
 
     .main > .main_footer > .playback > .progress {
-        height: 18px;
+        transform: scaleY(1);
+    }
+
+    .main > .main_footer > .playback > .progress:hover,
+    .main > .main_footer > .playback > .progress:active {
+        transform: scaleY(2);
     }
 
     .main > .main_footer > .playback > .container {
