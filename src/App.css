@@ -657,7 +657,7 @@ body.lockscroll {
     z-index: 1;
     touch-action: none;
     display: flex;
-    height: 10px;
+    height: 12px;
     margin-top: -4px;
     transform: scaleY(0.6);
     transform-origin: bottom;
@@ -666,7 +666,7 @@ body.lockscroll {
 
 .main > .main_footer > .playback > .progress:hover,
 .main > .main_footer > .playback > .progress:active {
-    transform: scaleY(1.6);
+    transform: scaleY(1.2);
 }
 
 /* Progress loading */
@@ -1225,12 +1225,12 @@ body.lockscroll {
     }
 
     .main > .main_footer > .playback > .progress {
-        transform: scaleY(1);
+        transform: scaleY(0.8);
     }
 
     .main > .main_footer > .playback > .progress:hover,
     .main > .main_footer > .playback > .progress:active {
-        transform: scaleY(2);
+        transform: scaleY(1.6);
     }
 
     .main > .main_footer > .playback > .container {
