@@ -625,7 +625,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                     if (userInteracted) {
                         await localAudioRef.play()
 
-                        if (!isCrossfadeActive) {
+                        if (isPreloadActive && !isCrossfadeActive) {
                             localCrossfadeRef.pause()
                         }
                     }
@@ -640,7 +640,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                             if (userInteracted) {
                                 await localAudioRef.play()
 
-                                if (!isCrossfadeActive) {
+                                if (isPreloadActive && !isCrossfadeActive) {
                                     localCrossfadeRef.pause()
                                 }
                             }
@@ -678,6 +678,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         currentTrack,
         isCrossfadeActive,
         isPlaying,
+        isPreloadActive,
         reportTrackStopped,
         setAudioSourceAndLoad,
         shiftAudioQueue,
@@ -910,6 +911,8 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
 
     // Attach play/pause event listeners
     useEffect(() => {
+        setIsPlaying(!audioRef.paused)
+
         const handlePlay = () => {
             setIsPlaying(true)
         }
