@@ -658,7 +658,7 @@ body.lockscroll {
     touch-action: none;
     display: flex;
     height: 12px;
-    margin-top: -4px;
+    margin-top: -5px;
     transform: scaleY(0.6);
     transform-origin: bottom;
     transition: transform 0.16s ease-out;
