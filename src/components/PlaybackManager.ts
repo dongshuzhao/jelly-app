@@ -80,6 +80,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
     })
 
     const isPreloaded = useRef(false)
+    const preloadedTrackId = useRef<string | undefined>(undefined)
 
     useEffect(() => {
         localStorage.setItem('crossfade', isCrossfadeActive.toString())
@@ -608,6 +609,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         try {
             if (isPreloaded.current) {
                 isPreloaded.current = false
+                preloadedTrackId.current = undefined
 
                 if (!isCrossfadeActive) {
                     shiftAudioQueue()
@@ -822,6 +824,7 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         if (nextTrack) {
             setAudioSourceAndLoad(crossfadeRef, 1, nextTrack)
             isPreloaded.current = true
+            preloadedTrackId.current = nextTrack.Id
         }
     }, [crossfadeRef, getNextTrack, setAudioSourceAndLoad])
 
@@ -866,6 +869,22 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
         isPreloadActive,
         preloadDuration,
     ])
+
+    // Re-preload if the next track changed
+    useEffect(() => {
+        const nextTrack = getNextTrack()
+
+        // If we have a preloaded track but it's not the current next track, invalidate and re-preload
+        if (isPreloaded.current && preloadedTrackId.current && nextTrack?.Id !== preloadedTrackId.current) {
+            isPreloaded.current = false
+            preloadedTrackId.current = undefined
+
+            // If we're currently playing and conditions are met, preload the new next track
+            if (isPlaying && isPreloadActive && nextTrack && repeat !== 'one') {
+                nextTrackPreload()
+            }
+        }
+    }, [getNextTrack, isPlaying, isPreloadActive, nextTrackPreload, repeat])
 
     const toggleShuffle = useCallback(() => {
         const newShuffle = !shuffle
