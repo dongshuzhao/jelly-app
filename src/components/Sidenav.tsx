@@ -42,7 +42,7 @@ export const Sidenav = (props: { username: string }) => {
     const [searchError, setSearchError] = useState<string | null>(null)
     const [searchAttempted, setSearchAttempted] = useState(false)
     const dropdown = useDropdownContext()
-    const { storageStats } = useDownloadContext()
+    const { storageStats, queueCount } = useDownloadContext()
 
     const handleVolumeChange = (e: ChangeEvent<HTMLInputElement>) => {
         const newVolume = parseFloat(e.target.value)
@@ -405,8 +405,13 @@ export const Sidenav = (props: { username: string }) => {
                                 </NavLink>
                             )}
 
-                            {storageStats.trackCount > 0 && (
-                                <NavLink to="/synced" className="icon synced" onClick={closeSidenav} title="Synced">
+                            {(storageStats.trackCount > 0 || queueCount > 0) && (
+                                <NavLink
+                                    to="/synced"
+                                    className={`icon synced ${queueCount > 0 ? 'downloading' : ''}`}
+                                    onClick={closeSidenav}
+                                    title="Synced"
+                                >
                                     <DownloadingIcon width={16} height={16} />
                                 </NavLink>
                             )}

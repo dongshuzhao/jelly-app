@@ -243,6 +243,28 @@ const useInitialState = () => {
     // We need the addToDownloads in jellyfin API but we don't want to cause unnecessary re-renders
     window.addToDownloads = addToDownloads
 
+    const removeFromQueue = (itemId: string) => {
+        setQueue(prev => {
+            const task = prev.find(t => t.mediaItem.Id === itemId)
+            if (!task) return prev
+
+            const isFirstInQueue = prev[0]?.mediaItem.Id === itemId
+            if (isFirstInQueue && abortControllerRef.current) {
+                abortControllerRef.current.abort('removeFromQueue')
+                abortControllerRef.current = null
+                processingRef.current = false
+            }
+
+            if (task.action === 'download') {
+                patchMediaItem(itemId, item => ({ ...item, offlineState: undefined }))
+            } else if (task.action === 'remove') {
+                patchMediaItem(itemId, item => ({ ...item, offlineState: 'downloaded' }))
+            }
+
+            return prev.filter(t => t.mediaItem.Id !== itemId)
+        })
+    }
+
     return {
         addToDownloads,
         removeFromDownloads,
@@ -250,6 +272,8 @@ const useInitialState = () => {
         refreshStorageStats,
         queueCount: queue.length,
         clearQueue,
+        queue,
+        removeFromQueue,
     }
 }
 

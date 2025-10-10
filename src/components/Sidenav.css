@@ -792,6 +792,22 @@ html.winOS .sidenav > .sidenav_wrapper > .sidenav_footer {
     fill: var(--font-color-active);
 }
 
+.sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.downloading > svg {
+    animation: downloading-pulse 2s ease-in-out infinite;
+}
+
+@keyframes downloading-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(0.92);
+    }
+}
+
 /* Responsive */
 @media only screen and (pointer: coarse) {
     .sidenav > .sidenav_wrapper > .sidenav_footer {
