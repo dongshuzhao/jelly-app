@@ -9,11 +9,12 @@ import { useDisplayItems } from '../hooks/useDisplayItems'
 import { formatDuration } from '../utils/formatDuration'
 import { JellyImg } from './JellyImg'
 import { Loader } from './Loader'
+import { DownloadIndicators } from './MediaList'
 import { IReviver } from './PlaybackManager'
 import './PlaylistTrackList.css'
 import { Skeleton } from './Skeleton'
 import { Squircle } from './Squircle'
-import { DeletingIcon, DownloadedIcon, DownloadingIcon, PlaystateAnimationTracklist } from './SvgIcons'
+import { PlaystateAnimationTracklist } from './SvgIcons'
 import { VirtuosoWindow } from './VirtuosoWindow'
 
 export const PlaylistTrackList = ({
@@ -133,32 +134,14 @@ export const PlaylistTrackList = ({
                     </div>
                 </div>
                 <div className="track-indicators">
-                    {track.offlineState && (
-                        <div className="download-state">
-                            {track.offlineState === 'downloading' && (
-                                <div className="icon downloading" title="Syncing...">
-                                    <DownloadingIcon width={12} height={12} />
-                                </div>
-                            )}
+                    <DownloadIndicators offlineState={track.offlineState} size={12} />
 
-                            {track.offlineState === 'downloaded' && (
-                                <div className="icon downloaded" title="Synced">
-                                    <DownloadedIcon width={12} height={12} />
-                                </div>
-                            )}
-
-                            {track.offlineState === 'deleting' && (
-                                <div className="icon deleting" title="Unsyncing...">
-                                    <DeletingIcon width={12} height={12} />
-                                </div>
-                            )}
-                        </div>
-                    )}
                     {isFavorite && (
                         <div className="favorited" title="Favorited">
                             <HeartFillIcon size={12} />
                         </div>
                     )}
+
                     <div className="track-duration">{formatDuration(track.RunTimeTicks || 0)}</div>
                 </div>
             </li>

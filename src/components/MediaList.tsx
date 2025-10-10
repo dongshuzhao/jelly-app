@@ -470,6 +470,34 @@ const SortableItem = ({
     )
 }
 
+export const DownloadIndicators = ({ offlineState, size }: { offlineState: string | undefined; size: number }) => {
+    if (!offlineState) {
+        return null
+    }
+
+    return (
+        <div className="download-state">
+            {offlineState === 'downloading' && (
+                <div className="icon downloading" title="Syncing...">
+                    <DownloadingIcon width={size} height={size} />
+                </div>
+            )}
+
+            {offlineState === 'downloaded' && (
+                <div className="icon downloaded" title="Synced">
+                    <DownloadedIcon width={size} height={size} />
+                </div>
+            )}
+
+            {offlineState === 'deleting' && (
+                <div className="icon deleting" title="Unsyncing...">
+                    <DeletingIcon width={size} height={size} />
+                </div>
+            )}
+        </div>
+    )
+}
+
 const MediaIndicators = ({
     item,
     disableActions,
@@ -483,27 +511,7 @@ const MediaIndicators = ({
 }) => {
     return (
         <div className="media-indicators">
-            {item.offlineState && (
-                <div className="download-state">
-                    {item.offlineState === 'downloading' && (
-                        <div className="icon downloading" title="Syncing...">
-                            <DownloadingIcon width={16} height={16} />
-                        </div>
-                    )}
-
-                    {item.offlineState === 'downloaded' && (
-                        <div className="icon downloaded" title="Synced">
-                            <DownloadedIcon width={16} height={16} />
-                        </div>
-                    )}
-
-                    {item.offlineState === 'deleting' && (
-                        <div className="icon deleting" title="Unsyncing...">
-                            <DeletingIcon width={16} height={16} />
-                        </div>
-                    )}
-                </div>
-            )}
+            <DownloadIndicators offlineState={item.offlineState} size={16} />
 
             {!disableActions && item.UserData?.IsFavorite && location.pathname !== '/favorites' && (
                 <div className="favorited" title="Favorited">

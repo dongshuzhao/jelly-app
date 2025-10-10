@@ -4,7 +4,8 @@ import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { IMenuItems } from '../context/DropdownContext/DropdownContextProvider'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
 import { formatDuration } from '../utils/formatDuration'
-import { DeletingIcon, DownloadedIcon, DownloadingIcon, PlaystateAnimationTracklist } from './SvgIcons'
+import { DownloadIndicators } from './MediaList'
+import { PlaystateAnimationTracklist } from './SvgIcons'
 import './TrackList.css'
 
 export const TrackList = ({
@@ -108,27 +109,7 @@ export const TrackList = ({
                                 )}
                             </div>
                             <div className="track-indicators">
-                                {track.offlineState && (
-                                    <div className="download-state">
-                                        {track.offlineState === 'downloading' && (
-                                            <div className="icon downloading" title="Syncing...">
-                                                <DownloadingIcon width={12} height={12} />
-                                            </div>
-                                        )}
-
-                                        {track.offlineState === 'downloaded' && (
-                                            <div className="icon downloaded" title="Synced">
-                                                <DownloadedIcon width={12} height={12} />
-                                            </div>
-                                        )}
-
-                                        {track.offlineState === 'deleting' && (
-                                            <div className="icon deleting" title="Unsyncing...">
-                                                <DeletingIcon width={12} height={12} />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                <DownloadIndicators offlineState={track.offlineState} size={12} />
 
                                 {track.UserData?.IsFavorite && (
                                     <div className="favorited" title="Favorited">
