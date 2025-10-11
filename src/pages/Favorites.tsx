@@ -1,5 +1,5 @@
 import { HeartFillIcon } from '@primer/octicons-react'
-import { MediaList } from '../components/MediaList'
+import { DownloadIndicators, MediaList } from '../components/MediaList'
 import { PlaylistTrackList } from '../components/PlaylistTrackList'
 import { Squircle } from '../components/Squircle'
 import { MoreIcon } from '../components/SvgIcons'
@@ -91,6 +91,7 @@ export const Favorites = () => {
                                 </div>
                             </div>
                             <div className="secondary">
+                                <DownloadIndicators offlineState={favoritesCustomItem?.offlineState} size={12} />
                                 <div
                                     className={`more ${isOpen ? 'active' : ''}`}
                                     onClick={handleMoreClick}
