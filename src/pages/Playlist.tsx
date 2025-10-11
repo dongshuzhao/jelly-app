@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { JellyImg } from '../components/JellyImg'
 import { Loader } from '../components/Loader'
+import { DownloadIndicators } from '../components/MediaList'
 import { PlaylistTrackList } from '../components/PlaylistTrackList'
 import { Squircle } from '../components/Squircle'
 import { MoreIcon } from '../components/SvgIcons'
@@ -131,12 +132,15 @@ export const Playlist = () => {
                                 )}
                             </div>
                         </div>
-                        <div
-                            className={`more ${isOpen && selectedItem?.Id === playlistData?.Id ? 'active' : ''}`}
-                            onClick={handleMoreClick}
-                            title="More"
-                        >
-                            <MoreIcon width={14} height={14} />
+                        <div className="secondary">
+                            <DownloadIndicators offlineState={playlistData.offlineState} size={16} />
+                            <div
+                                className={`more ${isOpen && selectedItem?.Id === playlistData?.Id ? 'active' : ''}`}
+                                onClick={handleMoreClick}
+                                title="More"
+                            >
+                                <MoreIcon width={14} height={14} />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -150,7 +150,17 @@
     color: var(--brand-color);
 }
 
-.playlist-page > .playlist-header > .playlist-details > .actions > .more {
+.playlist-page > .playlist-header > .playlist-details > .actions > .secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.playlist-page > .playlist-header > .playlist-details > .actions > .secondary > .download-state {
+    fill: var(--font-color-tertiary);
+}
+
+.playlist-page > .playlist-header > .playlist-details > .actions > .secondary > .more {
     cursor: pointer;
     padding: 7px;
     border-radius: 20px;
@@ -158,15 +168,15 @@
     transition: background-color 0.2s ease-out;
 }
 
-.playlist-page > .playlist-header > .playlist-details > .actions > .more:hover {
+.playlist-page > .playlist-header > .playlist-details > .actions > .secondary > .more:hover {
     background-color: var(--bg-color-tertiary);
 }
 
-.playlist-page > .playlist-header > .playlist-details > .actions > .more.active {
+.playlist-page > .playlist-header > .playlist-details > .actions > .secondary > .more.active {
     background-color: var(--bg-color-tertiary);
 }
 
-.playlist-page > .playlist-header > .playlist-details > .actions > .more > svg {
+.playlist-page > .playlist-header > .playlist-details > .actions > .secondary > .more > svg {
     fill: var(--brand-color);
 }
 

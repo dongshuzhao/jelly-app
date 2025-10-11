@@ -118,7 +118,17 @@
     color: var(--brand-color);
 }
 
-.favorites-page > .favorites-header > .favorites-details > .actions > .more {
+.favorites-page > .favorites-header > .favorites-details > .actions > .secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.favorites-page > .favorites-header > .favorites-details > .actions > .secondary > .download-state {
+    fill: var(--font-color-tertiary);
+}
+
+.favorites-page > .favorites-header > .favorites-details > .actions > .secondary > .more {
     cursor: pointer;
     padding: 7px;
     border-radius: 20px;
@@ -126,15 +136,15 @@
     transition: background-color 0.2s ease-out;
 }
 
-.favorites-page > .favorites-header > .favorites-details > .actions > .more:hover {
+.favorites-page > .favorites-header > .favorites-details > .actions > .secondary > .more:hover {
     background-color: var(--bg-color-tertiary);
 }
 
-.favorites-page > .favorites-header > .favorites-details > .actions > .more.active {
+.favorites-page > .favorites-header > .favorites-details > .actions > .secondary > .more.active {
     background-color: var(--bg-color-tertiary);
 }
 
-.favorites-page > .favorites-header > .favorites-details > .actions > .more > svg {
+.favorites-page > .favorites-header > .favorites-details > .actions > .secondary > .more > svg {
     fill: var(--brand-color);
 }
 

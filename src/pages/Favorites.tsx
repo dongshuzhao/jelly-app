@@ -90,8 +90,14 @@ export const Favorites = () => {
                                     <div className="text">Play</div>
                                 </div>
                             </div>
-                            <div className={`more ${isOpen ? 'active' : ''}`} onClick={handleMoreClick} title="More">
-                                <MoreIcon width={14} height={14} />
+                            <div className="secondary">
+                                <div
+                                    className={`more ${isOpen ? 'active' : ''}`}
+                                    onClick={handleMoreClick}
+                                    title="More"
+                                >
+                                    <MoreIcon width={14} height={14} />
+                                </div>
                             </div>
                         </div>
                     </div>

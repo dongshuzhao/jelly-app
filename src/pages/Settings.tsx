@@ -240,7 +240,7 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                     <div className="container">
                         <div className="title">Offline Sync</div>
                         <div className="desc">
-                            Synced Music - <span className="number">{storageStats.trackCount}</span> Track
+                            Synced - <span className="number">{storageStats.trackCount}</span> Track
                             {storageStats.trackCount === 1 ? '' : 's'}
                             {queueCount > 0 ? (
                                 <>

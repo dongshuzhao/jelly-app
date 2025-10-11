@@ -151,7 +151,17 @@
     color: var(--brand-color);
 }
 
-.artist-page > .artist-header > .artist-details > .actions > .more {
+.artist-page > .artist-header > .artist-details > .actions > .secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.artist-page > .artist-header > .artist-details > .actions > .secondary > .download-state {
+    fill: var(--font-color-tertiary);
+}
+
+.artist-page > .artist-header > .artist-details > .actions > .secondary > .more {
     cursor: pointer;
     padding: 7px;
     border-radius: 20px;
@@ -159,15 +169,15 @@
     transition: background-color 0.2s ease-out;
 }
 
-.artist-page > .artist-header > .artist-details > .actions > .more:hover {
+.artist-page > .artist-header > .artist-details > .actions > .secondary > .more:hover {
     background-color: var(--bg-color-tertiary);
 }
 
-.artist-page > .artist-header > .artist-details > .actions > .more.active {
+.artist-page > .artist-header > .artist-details > .actions > .secondary > .more.active {
     background-color: var(--bg-color-tertiary);
 }
 
-.artist-page > .artist-header > .artist-details > .actions > .more > svg {
+.artist-page > .artist-header > .artist-details > .actions > .secondary > .more > svg {
     fill: var(--brand-color);
 }
 

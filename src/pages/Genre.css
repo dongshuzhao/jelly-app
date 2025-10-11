@@ -118,7 +118,17 @@
     color: var(--brand-color);
 }
 
-.genre-page > .genre-header > .genre-details > .actions > .more {
+.genre-page > .genre-header > .genre-details > .actions > .secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.genre-page > .genre-header > .genre-details > .actions > .secondary > .download-state {
+    fill: var(--font-color-tertiary);
+}
+
+.genre-page > .genre-header > .genre-details > .actions > .secondary > .more {
     cursor: pointer;
     padding: 7px;
     border-radius: 20px;
@@ -126,15 +136,15 @@
     transition: background-color 0.2s ease-out;
 }
 
-.genre-page > .genre-header > .genre-details > .actions > .more:hover {
+.genre-page > .genre-header > .genre-details > .actions > .secondary > .more:hover {
     background-color: var(--bg-color-tertiary);
 }
 
-.genre-page > .genre-header > .genre-details > .actions > .more.active {
+.genre-page > .genre-header > .genre-details > .actions > .secondary > .more.active {
     background-color: var(--bg-color-tertiary);
 }
 
-.genre-page > .genre-header > .genre-details > .actions > .more > svg {
+.genre-page > .genre-header > .genre-details > .actions > .secondary > .more > svg {
     fill: var(--brand-color);
 }
 
