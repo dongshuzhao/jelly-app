@@ -10,52 +10,36 @@ export const Downloads = () => {
     const { jellyItemKind } = useFilterContext()
     const { queue, removeFromQueue } = useDownloadContext()
 
+    const queueItems = queue.map(task => ({
+        ...task.mediaItem,
+        offlineState: (task.action === 'remove' ? 'deleting' : 'downloading') as 'downloading' | 'deleting',
+    }))
+
     return (
         <div className="favorites-page downloads-page">
             {error && <div className="error">{error}</div>}
 
-            {queue.length > 0 && (
-                <div className="queue-section">
-                    <div className="queue-list">
-                        {queue.map(task => {
-                            const item = task.mediaItem
-
-                            return (
-                                <div key={item.Id} className="queue-item">
-                                    <div className="queue-item-content">
-                                        <MediaList
-                                            items={[
-                                                {
-                                                    ...item,
-                                                    offlineState: task.action === 'remove' ? 'deleting' : 'downloading',
-                                                },
-                                            ]}
-                                            infiniteData={{ pageParams: [], pages: [] }}
-                                            isLoading={false}
-                                            type={
-                                                item.Type === 'Audio'
-                                                    ? 'song'
-                                                    : item.Type === 'MusicAlbum'
-                                                    ? 'album'
-                                                    : 'artist'
-                                            }
-                                            title="Queue Item"
-                                            disableActions={true}
-                                        />
-                                    </div>
-                                    <button
-                                        className="remove-queue-button"
-                                        onClick={() => removeFromQueue(item.Id)}
-                                        title="Remove from queue"
-                                        aria-label="Remove from queue"
-                                    >
-                                        <XIcon size={16} />
-                                    </button>
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
+            {queueItems.length > 0 && (
+                <MediaList
+                    items={queueItems}
+                    infiniteData={{ pageParams: [], pages: [] }}
+                    isLoading={false}
+                    type="song"
+                    title="Queue"
+                    disableActions={true}
+                    disableEvents={true}
+                    preferItemType={true}
+                    removeButton={item => (
+                        <button
+                            className="remove-queue-button"
+                            onClick={() => removeFromQueue(item.Id)}
+                            title="Remove from queue"
+                            aria-label="Remove from queue"
+                        >
+                            <XIcon size={16} />
+                        </button>
+                    )}
+                />
             )}
 
             <MediaList
