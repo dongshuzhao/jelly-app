@@ -6,6 +6,9 @@ import { MediaItem } from '../api/jellyfin.ts'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type IVirtuosoProps = VirtuosoProps<MediaItem | { isPlaceholder: true }, any>
 
+// Global Map to store scroll offsets keyed by history state index
+const scrollOffsets = new Map<number, number>()
+
 export const VirtuosoWindow = (virtuosoProps: IVirtuosoProps) => {
     const virtuosoRef = useRef<VirtuosoHandle>(null)
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -18,11 +21,9 @@ export const VirtuosoWindow = (virtuosoProps: IVirtuosoProps) => {
 
     useEffect(() => {
         const onScroll = () => {
-            const y = window.scrollY
-            const current = history.state || {}
-
-            if (current.virtuosoOffset !== y) {
-                history.replaceState({ ...current, virtuosoOffset: y - initialOffset }, '')
+            const idx = history.state?.idx
+            if (idx !== undefined) {
+                scrollOffsets.set(idx, window.scrollY - initialOffset)
             }
         }
 
@@ -30,14 +31,11 @@ export const VirtuosoWindow = (virtuosoProps: IVirtuosoProps) => {
         return () => window.removeEventListener('scrollend', onScroll)
     }, [initialOffset])
 
+    const savedOffset = scrollOffsets.get(history.state?.idx)
+
     return (
         <div ref={wrapperRef}>
-            <Virtuoso
-                {...virtuosoProps}
-                ref={virtuosoRef}
-                initialScrollTop={history.state?.virtuosoOffset || 0}
-                useWindowScroll
-            />
+            <Virtuoso {...virtuosoProps} ref={virtuosoRef} initialScrollTop={savedOffset || 0} useWindowScroll />
         </div>
     )
 }
