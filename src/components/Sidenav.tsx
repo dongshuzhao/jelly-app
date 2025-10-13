@@ -1,7 +1,7 @@
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client'
 import { BookmarkFillIcon, GearIcon } from '@primer/octicons-react'
 import { ChangeEvent, useEffect, useRef, useState, WheelEvent } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { MediaItem } from '../api/jellyfin'
 import '../App.css'
 import { useDownloadContext } from '../context/DownloadContext/DownloadContext'
@@ -28,6 +28,7 @@ import {
 
 export const Sidenav = (props: { username: string }) => {
     const playback = usePlaybackContext()
+    const navigate = useNavigate()
     const searchInputRef = useRef<HTMLInputElement>(null)
     const { showSidenav, closeSidenav } = useSidenavContext()
 
@@ -71,6 +72,23 @@ export const Sidenav = (props: { username: string }) => {
             closeSidenav()
         }
     }
+
+    // Debounced URL update for search query
+    useEffect(() => {
+        const debounceTimer = setTimeout(() => {
+            const params = new URLSearchParams(location.search)
+            if (searchQuery) {
+                params.set('search', searchQuery)
+            } else {
+                params.delete('search')
+            }
+            const newSearch = params.toString()
+            const newUrl = newSearch ? `?${newSearch}` : location.pathname
+            navigate(newUrl, { replace: true })
+        }, 200)
+
+        return () => clearTimeout(debounceTimer)
+    }, [searchQuery, navigate])
 
     useEffect(() => {
         const focusSearch = (e: KeyboardEvent) => {
