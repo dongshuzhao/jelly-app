@@ -792,19 +792,29 @@ html.winOS .sidenav > .sidenav_wrapper > .sidenav_footer {
     fill: var(--font-color-active);
 }
 
-.sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.downloading > svg {
-    animation: downloading-pulse 2s ease-in-out infinite;
+.sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.synced {
+    position: relative;
 }
 
-@keyframes downloading-pulse {
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
+.sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.synced.active-sync > svg {
+    position: relative;
+}
+
+.sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.synced.active-sync > svg path:last-child {
+    fill: #000000;
+    clip-path: inset(100% 0 0 0);
+    animation: syncColorSweep 1.5s ease-in-out infinite;
+}
+
+@keyframes syncColorSweep {
+    0% {
+        clip-path: inset(0 0 100% 0);
     }
     50% {
-        opacity: 0.4;
-        transform: scale(0.92);
+        clip-path: inset(0% 0 0 0);
+    }
+    100% {
+        clip-path: inset(100% 0 0 0);
     }
 }
 

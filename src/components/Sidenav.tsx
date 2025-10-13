@@ -368,7 +368,7 @@ export const Sidenav = (props: { username: string }) => {
                             {(storageStats.trackCount > 0 || queueCount > 0) && (
                                 <NavLink
                                     to="/synced"
-                                    className={`icon synced ${queueCount > 0 ? 'downloading' : ''}`}
+                                    className={`icon synced ${queueCount > 0 ? 'active-sync' : ''}`}
                                     onClick={closeSidenav}
                                     title="Synced"
                                 >
