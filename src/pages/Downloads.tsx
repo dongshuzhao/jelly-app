@@ -10,10 +10,13 @@ export const Downloads = () => {
     const { jellyItemKind } = useFilterContext()
     const { queue, removeFromQueue } = useDownloadContext()
 
-    const queueItems = queue.map(task => ({
-        ...task.mediaItem,
-        offlineState: (task.action === 'remove' ? 'deleting' : 'downloading') as 'downloading' | 'deleting',
-    }))
+    const queueItems = queue
+        .filter(task => task.mediaItem.Type === jellyItemKind)
+        .map(task => ({
+            ...task.mediaItem,
+            offlineState: (task.action === 'remove' ? 'deleting' : 'downloading') as 'downloading' | 'deleting',
+        }))
+        .reverse()
 
     return (
         <div className="favorites-page downloads-page">
@@ -25,11 +28,10 @@ export const Downloads = () => {
                         items={queueItems}
                         infiniteData={{ pageParams: [], pages: [] }}
                         isLoading={false}
-                        type="song"
+                        type={jellyItemKind === 'Audio' ? 'song' : jellyItemKind === 'MusicAlbum' ? 'album' : 'artist'}
                         title="Queue"
                         disableActions={true}
                         disableEvents={true}
-                        preferItemType={true}
                         removeButton={item => (
                             <div
                                 className="remove-queue-button"
