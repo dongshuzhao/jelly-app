@@ -4,15 +4,14 @@ import { ChangeEvent, useEffect, useRef, useState, WheelEvent } from 'react'
 import { NavLink } from 'react-router-dom'
 import { MediaItem } from '../api/jellyfin'
 import '../App.css'
-import { useAudioStorageContext } from '../context/AudioStorageContext/AudioStorageContext'
 import { useDownloadContext } from '../context/DownloadContext/DownloadContext'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { buildUrlWithSavedFilters } from '../context/FilterContext/FilterContext'
-import { useJellyfinContext } from '../context/JellyfinContext/JellyfinContext'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
 import { useScrollContext } from '../context/ScrollContext/ScrollContext'
 import { useSidenavContext } from '../context/SidenavContext/SidenavContext'
 import { useJellyfinPlaylistsList } from '../hooks/Jellyfin/useJellyfinPlaylistsList'
+import { useJellyfinSearch } from '../hooks/Jellyfin/useJellyfinSearch'
 import { InlineLoader } from './InlineLoader'
 import './Sidenav.css'
 import {
@@ -28,19 +27,14 @@ import {
 } from './SvgIcons'
 
 export const Sidenav = (props: { username: string }) => {
-    const api = useJellyfinContext()
     const playback = usePlaybackContext()
     const searchInputRef = useRef<HTMLInputElement>(null)
     const { showSidenav, closeSidenav } = useSidenavContext()
-    const audioStorage = useAudioStorageContext()
 
     const { playlists, loading, error } = useJellyfinPlaylistsList()
     const { disabled, setDisabled } = useScrollContext()
     const [searchQuery, setSearchQuery] = useState(new URLSearchParams(location.search).get('search') || '')
-    const [searchResults, setSearchResults] = useState<MediaItem[]>([])
-    const [searchLoading, setSearchLoading] = useState(false)
-    const [searchError, setSearchError] = useState<string | null>(null)
-    const [searchAttempted, setSearchAttempted] = useState(false)
+    const { searchResults, searchLoading, searchError, searchAttempted } = useJellyfinSearch(searchQuery)
     const dropdown = useDropdownContext()
     const { storageStats, queueCount } = useDownloadContext()
 
@@ -56,64 +50,12 @@ export const Sidenav = (props: { username: string }) => {
         playback.setVolume(newVolume)
     }
 
-    useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            const fetchSearchResults = async () => {
-                if (!searchQuery || !api.auth.serverUrl || !api.auth.token || !api.auth.userId) {
-                    setSearchResults([])
-                    setSearchAttempted(false)
-                    return
-                }
-
-                setSearchLoading(true)
-                setSearchError(null)
-                setSearchAttempted(true)
-
-                try {
-                    if (navigator.onLine) {
-                        // Fetch artists from /Artists endpoint
-                        const [artistResponse, itemsResponse, genreResponse] = await Promise.all([
-                            api.searchArtists(searchQuery, 20),
-                            api.searchItems(searchQuery, 40),
-                            api.searchGenres(searchQuery, 20),
-                        ])
-
-                        // Fetch songs, albums, and playlists from /Items endpoint
-                        const artists = artistResponse.slice(0, 4)
-                        const songs = itemsResponse.filter(item => item.Type === 'Audio').slice(0, 6)
-                        const albums = itemsResponse.filter(item => item.Type === 'MusicAlbum').slice(0, 4)
-                        const playlists = itemsResponse.filter(item => item.Type === 'Playlist').slice(0, 4)
-                        const genres = genreResponse.slice(0, 4)
-
-                        const limitedResults = [...songs, ...artists, ...albums, ...playlists, ...genres]
-                        setSearchResults(limitedResults)
-                    } else {
-                        // Use offline search when no network
-                        const offlineResults = await audioStorage.searchOfflineItems(searchQuery, 10)
-                        setSearchResults(offlineResults)
-                    }
-                } catch (err) {
-                    console.error('Search Error:', err)
-                    setSearchError('Failed to load search results')
-                } finally {
-                    setSearchLoading(false)
-                }
-            }
-
-            fetchSearchResults()
-        }, 200)
-
-        return () => clearTimeout(debounceTimer)
-    }, [searchQuery, api.auth.serverUrl, api.auth.token, api.auth.userId, api, audioStorage])
-
     const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value)
     }
 
     const handleClearSearch = () => {
         setSearchQuery('')
-        setSearchResults([])
-        setSearchAttempted(false)
     }
 
     const handleSongClick = (song: MediaItem) => {
