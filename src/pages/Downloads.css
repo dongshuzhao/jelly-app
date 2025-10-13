@@ -1,34 +1,33 @@
-.downloads-page .remove-queue-button {
-    position: absolute;
-    right: 2rem;
-    background: var(--background-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.downloads-page > .queue-list > .media-list {
+    margin: 0;
+}
+
+.downloads-page > .queue-list > .media-list .media-item {
+    cursor: unset;
+    background-color: unset;
+}
+
+.downloads-page > .queue-list > .media-list .media-item > :not(.media-indicators) {
+    opacity: 0.6;
+    user-select: none;
+    pointer-events: none;
+}
+
+.downloads-page > .queue-list > .media-list .media-item:hover > .media-state > .overlay {
+    display: none;
+}
+
+.downloads-page > .queue-list > .media-list .media-item > .media-state > .thumbnail {
+    filter: grayscale(0.8) brightness(0.8);
+}
+
+.downloads-page > .queue-list > .media-list .media-item .remove-queue-button {
     cursor: pointer;
-    transition: all 0.2s ease;
-    z-index: 10;
-    padding: 0;
+    padding: 6px;
+    border-radius: 20px;
+    transition: background-color 0.2s ease-out;
 }
 
-.downloads-page .remove-queue-button:hover {
-    background: var(--background-tertiary);
-    border-color: var(--text-secondary);
-    transform: scale(1.1);
-}
-
-.downloads-page .remove-queue-button:active {
-    transform: scale(0.95);
-}
-
-.downloads-page .remove-queue-button svg {
-    color: var(--text-secondary);
-}
-
-.downloads-page .remove-queue-button:hover svg {
-    color: var(--text-primary);
+.downloads-page > .queue-list > .media-list .media-item .remove-queue-button:hover {
+    background-color: var(--bg-color-tertiary);
 }

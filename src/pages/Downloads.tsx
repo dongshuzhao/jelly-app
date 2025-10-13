@@ -1,4 +1,4 @@
-import { XIcon } from '@primer/octicons-react'
+import { XCircleIcon } from '@primer/octicons-react'
 import { MediaList } from '../components/MediaList'
 import { useDownloadContext } from '../context/DownloadContext/DownloadContext'
 import { useFilterContext } from '../context/FilterContext/FilterContext'
@@ -20,32 +20,34 @@ export const Downloads = () => {
             {error && <div className="error">{error}</div>}
 
             {queueItems.length > 0 && (
-                <MediaList
-                    items={queueItems}
-                    infiniteData={{ pageParams: [], pages: [] }}
-                    isLoading={false}
-                    type="song"
-                    title="Queue"
-                    disableActions={true}
-                    disableEvents={true}
-                    preferItemType={true}
-                    removeButton={item => (
-                        <button
-                            className="remove-queue-button"
-                            onClick={() => removeFromQueue(item.Id)}
-                            title="Remove from queue"
-                            aria-label="Remove from queue"
-                        >
-                            <XIcon size={16} />
-                        </button>
-                    )}
-                />
+                <div className="queue-list">
+                    <MediaList
+                        items={queueItems}
+                        infiniteData={{ pageParams: [], pages: [] }}
+                        isLoading={false}
+                        type="song"
+                        title="Queue"
+                        disableActions={true}
+                        disableEvents={true}
+                        preferItemType={true}
+                        removeButton={item => (
+                            <div
+                                className="remove-queue-button"
+                                onClick={() => removeFromQueue(item.Id)}
+                                title="Remove from queue"
+                                aria-label="Remove from queue"
+                            >
+                                <XCircleIcon size={16} />
+                            </div>
+                        )}
+                    />
+                </div>
             )}
 
             <MediaList
                 items={items}
                 infiniteData={{ pageParams: [1], pages: [items] }}
-                isLoading={isLoading}
+                isLoading={isLoading && queueItems.length === 0}
                 type={jellyItemKind === 'Audio' ? 'song' : jellyItemKind === 'MusicAlbum' ? 'album' : 'artist'}
                 loadMore={loadMore}
                 title={'Synced'}
