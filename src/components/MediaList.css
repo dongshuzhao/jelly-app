@@ -388,6 +388,23 @@
     fill: var(--font-color-secondary);
 }
 
+.media-list .media-item > .media-indicators > .download-state > .icon.downloading.active-sync > svg path:last-child {
+    clip-path: inset(100% 0 0 0);
+    animation: syncColorSweepML 1.6s linear infinite;
+}
+
+@keyframes syncColorSweepML {
+    0% {
+        clip-path: inset(0 0 100% 0);
+    }
+    50% {
+        clip-path: inset(0% 0 0 0);
+    }
+    100% {
+        clip-path: inset(100% 0 0 0);
+    }
+}
+
 .media-list .media-item > .media-indicators > .favorited {
     padding: 6px;
     color: var(--font-color-tertiary);
