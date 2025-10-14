@@ -797,7 +797,18 @@ html.winOS .sidenav > .sidenav_wrapper > .sidenav_footer {
 .sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.synced.active-sync > svg path:last-child {
     fill: var(--font-color);
     clip-path: inset(100% 0 0 0);
-    animation: syncColorSweep 1.5s ease-in-out infinite;
+    animation: syncColorSweep 1.6s linear infinite;
+}
+
+.sidenav
+    > .sidenav_wrapper
+    > .sidenav_footer
+    > .account
+    > .actions
+    > .icon.active.synced.active-sync
+    > svg
+    path:last-child {
+    fill: var(--font-color-active);
 }
 
 @keyframes syncColorSweep {

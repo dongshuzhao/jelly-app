@@ -12,6 +12,7 @@ import { useScrollContext } from '../context/ScrollContext/ScrollContext'
 import { useSidenavContext } from '../context/SidenavContext/SidenavContext'
 import { useJellyfinPlaylistsList } from '../hooks/Jellyfin/useJellyfinPlaylistsList'
 import { useJellyfinSearch } from '../hooks/Jellyfin/useJellyfinSearch'
+import { formatFileSize } from '../utils/formatFileSize'
 import { InlineLoader } from './InlineLoader'
 import './Sidenav.css'
 import {
@@ -370,7 +371,15 @@ export const Sidenav = (props: { username: string }) => {
                                     to="/synced"
                                     className={`icon synced ${queueCount > 0 ? 'active-sync' : ''}`}
                                     onClick={closeSidenav}
-                                    title="Synced"
+                                    title={`Synced - ${storageStats.trackCount} Track${
+                                        storageStats.trackCount === 1 ? '' : 's'
+                                    }${
+                                        queueCount > 0
+                                            ? ` (${queueCount} track${queueCount === 1 ? '' : 's'} in queue)`
+                                            : ''
+                                    } / ${formatFileSize(
+                                        storageStats.trackCount === 0 ? 0 : storageStats?.indexedDB || 0
+                                    )} Used`}
                                 >
                                     <DownloadingIcon width={16} height={16} />
                                 </NavLink>
