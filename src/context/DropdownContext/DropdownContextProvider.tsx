@@ -734,13 +734,14 @@ const useInitialState = () => {
                                             className={`playlist-input${playlistName.trim() ? ' has-text' : ''}`}
                                             disabled={isCreatingPlaylist}
                                         />
-                                        <button
-                                            className="create-btn"
-                                            onClick={handleCreateClick}
-                                            disabled={isCreatingPlaylist}
-                                        >
-                                            {isCreatingPlaylist ? <InlineLoader /> : 'Create'}
-                                        </button>
+
+                                        {isCreatingPlaylist && <InlineLoader />}
+
+                                        {!isCreatingPlaylist && (
+                                            <button className="create-btn" onClick={handleCreateClick}>
+                                                Create
+                                            </button>
+                                        )}
                                     </div>
                                 </DropdownItem>
 
@@ -898,9 +899,14 @@ const useInitialState = () => {
                                 className={`playlist-input${playlistName.trim() ? ' has-text' : ''}`}
                                 disabled={isCreatingPlaylist}
                             />
-                            <button className="create-btn" onClick={handleCreateClick} disabled={isCreatingPlaylist}>
-                                {isCreatingPlaylist ? <InlineLoader /> : 'Create'}
-                            </button>
+
+                            {isCreatingPlaylist && <InlineLoader />}
+
+                            {!isCreatingPlaylist && (
+                                <button className="create-btn" onClick={handleCreateClick}>
+                                    Create
+                                </button>
+                            )}
                         </div>
                     </DropdownItem>,
                     ...(playlists.length > 0 ? [<div key="playlist-separator" className="dropdown-separator" />] : []),
@@ -934,9 +940,14 @@ const useInitialState = () => {
                                 className={`playlist-input${renamePlaylistName.trim() ? ' has-text' : ''}`}
                                 disabled={isRenamingPlaylist}
                             />
-                            <button className="create-btn" onClick={handleRenameClick} disabled={isRenamingPlaylist}>
-                                {isRenamingPlaylist ? <InlineLoader /> : 'Rename'}
-                            </button>
+
+                            {isRenamingPlaylist && <InlineLoader />}
+
+                            {!isRenamingPlaylist && (
+                                <button className="create-btn" onClick={handleRenameClick}>
+                                    Rename
+                                </button>
+                            )}
                         </div>
                     </DropdownItem>,
                 ]
