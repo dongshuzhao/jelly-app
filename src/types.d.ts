@@ -6,6 +6,7 @@ declare global {
         __NPM_LIFECYCLE_EVENT__: string
         audioStorage: IAudioStorageContext
         addToDownloads: (items: MediaItem[], container?: MediaItem) => void
+        getDownloadState: (itemId: string) => 'downloading' | 'deleting' | undefined
     }
 
     const __VERSION__: string
