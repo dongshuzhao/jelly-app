@@ -169,7 +169,11 @@ export const NowPlayingLyrics = () => {
                                                 kbps
                                             </div>
 
-                                            <DownloadIndicators offlineState={currentTrack?.offlineState} size={12} />
+                                            <DownloadIndicators
+                                                offlineState={currentTrack?.offlineState}
+                                                size={12}
+                                                itemId={currentTrack?.Id}
+                                            />
                                         </div>
                                         <div className="duration">{playback.formatTime(duration.duration)}</div>
                                     </div>

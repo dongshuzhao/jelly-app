@@ -91,7 +91,11 @@ export const Favorites = () => {
                                 </div>
                             </div>
                             <div className="secondary">
-                                <DownloadIndicators offlineState={favoritesCustomItem?.offlineState} size={12} />
+                                <DownloadIndicators
+                                    offlineState={favoritesCustomItem?.offlineState}
+                                    size={12}
+                                    itemId={favoritesCustomItem?.Id}
+                                />
                                 <div
                                     className={`more ${isOpen ? 'active' : ''}`}
                                     onClick={handleMoreClick}

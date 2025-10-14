@@ -133,7 +133,11 @@ export const Playlist = () => {
                             </div>
                         </div>
                         <div className="secondary">
-                            <DownloadIndicators offlineState={playlistData.offlineState} size={16} />
+                            <DownloadIndicators
+                                offlineState={playlistData.offlineState}
+                                size={16}
+                                itemId={playlistData.Id}
+                            />
                             <div
                                 className={`more ${isOpen && selectedItem?.Id === playlistData?.Id ? 'active' : ''}`}
                                 onClick={handleMoreClick}

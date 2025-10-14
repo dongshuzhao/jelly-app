@@ -106,7 +106,11 @@ export const Genre = () => {
                             </div>
                         </div>
                         <div className="secondary">
-                            <DownloadIndicators offlineState={currentGenre.offlineState} size={12} />
+                            <DownloadIndicators
+                                offlineState={currentGenre.offlineState}
+                                size={12}
+                                itemId={currentGenre.Id}
+                            />
                             <div className={`more ${isOpen ? 'active' : ''}`} onClick={handleMoreClick} title="More">
                                 <MoreIcon width={14} height={14} />
                             </div>

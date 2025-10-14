@@ -109,7 +109,7 @@ export const TrackList = ({
                                 )}
                             </div>
                             <div className="track-indicators">
-                                <DownloadIndicators offlineState={track.offlineState} size={12} />
+                                <DownloadIndicators offlineState={track.offlineState} size={12} itemId={track.Id} />
 
                                 {track.UserData?.IsFavorite && (
                                     <div className="favorited" title="Favorited">

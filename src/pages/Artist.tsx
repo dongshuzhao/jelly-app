@@ -140,7 +140,7 @@ export const Artist = () => {
                             </div>
                         </div>
                         <div className="secondary">
-                            <DownloadIndicators offlineState={artist.offlineState} size={16} />
+                            <DownloadIndicators offlineState={artist.offlineState} size={16} itemId={artist.Id} />
                             <div
                                 className={`more ${isOpen && selectedItem?.Id === artist?.Id ? 'active' : ''}`}
                                 onClick={handleMoreClick}

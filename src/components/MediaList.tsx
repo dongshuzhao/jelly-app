@@ -18,6 +18,7 @@ import { InfiniteData } from '@tanstack/react-query'
 import { ReactNode, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MediaItem } from '../api/jellyfin'
+import { useDownloadContext } from '../context/DownloadContext/DownloadContext'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { IMenuItems } from '../context/DropdownContext/DropdownContextProvider'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
@@ -524,7 +525,18 @@ const SortableItem = ({
     )
 }
 
-export const DownloadIndicators = ({ offlineState, size }: { offlineState: string | undefined; size: number }) => {
+export const DownloadIndicators = ({
+    offlineState,
+    size,
+    itemId,
+}: {
+    offlineState: string | undefined
+    size: number
+    itemId: string | undefined
+}) => {
+    const { queue } = useDownloadContext()
+    const isActiveInQueue = queue[0]?.mediaItem.Id === itemId || queue[0]?.containerId === itemId
+
     if (!offlineState) {
         return null
     }
@@ -532,7 +544,7 @@ export const DownloadIndicators = ({ offlineState, size }: { offlineState: strin
     return (
         <div className="download-state">
             {offlineState === 'downloading' && (
-                <div className="icon downloading" title="Syncing...">
+                <div className={`icon downloading ${isActiveInQueue ? 'active-sync' : ''}`} title="Syncing...">
                     <DownloadingIcon width={size} height={size} />
                 </div>
             )}
@@ -544,7 +556,7 @@ export const DownloadIndicators = ({ offlineState, size }: { offlineState: strin
             )}
 
             {offlineState === 'deleting' && (
-                <div className="icon deleting" title="Unsyncing...">
+                <div className={`icon deleting ${isActiveInQueue ? 'active-sync' : ''}`} title="Unsyncing...">
                     <DeletingIcon width={size} height={size} />
                 </div>
             )}
@@ -569,7 +581,7 @@ const MediaIndicators = ({
         <div className="media-indicators">
             {removeButton && removeButton(item)}
 
-            <DownloadIndicators offlineState={item.offlineState} size={16} />
+            <DownloadIndicators offlineState={item.offlineState} size={16} itemId={item.Id} />
 
             {!disableActions && item.UserData?.IsFavorite && location.pathname !== '/favorites' && (
                 <div className="favorited" title="Favorited">

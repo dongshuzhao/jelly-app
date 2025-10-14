@@ -138,7 +138,7 @@ export const Album = () => {
                             </div>
                         </div>
                         <div className="secondary">
-                            <DownloadIndicators offlineState={album.offlineState} size={16} />
+                            <DownloadIndicators offlineState={album.offlineState} size={16} itemId={album.Id} />
                             <div
                                 className={`more ${isOpen && selectedItem?.Id === album?.Id ? 'active' : ''}`}
                                 onClick={handleMoreClick}
