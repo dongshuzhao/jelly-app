@@ -95,8 +95,12 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
     const reloadApp = async () => {
         queryClient.clear()
         await persister.removeClient()
-        await Promise.all(((await navigator.serviceWorker?.getRegistrations()) || []).map(r => r.unregister()))
-        await Promise.all(((await window.caches?.keys()) || []).map(c => window.caches.delete(c)))
+
+        if (navigator.onLine) {
+            await Promise.all(((await navigator.serviceWorker?.getRegistrations()) || []).map(r => r.unregister()))
+            await Promise.all(((await window.caches?.keys()) || []).map(c => window.caches.delete(c)))
+        }
+
         window.location.reload()
     }
 
