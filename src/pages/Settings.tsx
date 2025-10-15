@@ -92,6 +92,14 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
         }
     }, [audioStorage, clearQueue, queryClient, refreshStorageStats])
 
+    const reloadApp = async () => {
+        queryClient.clear()
+        await persister.removeClient()
+        await Promise.all(((await navigator.serviceWorker?.getRegistrations()) || []).map(r => r.unregister()))
+        await Promise.all(((await window.caches?.keys()) || []).map(c => window.caches.delete(c)))
+        window.location.reload()
+    }
+
     return (
         <div className="settings-page">
             <div className="section appearance">
@@ -494,11 +502,7 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                     </button>
 
                     <button
-                        onClick={async () => {
-                            queryClient.clear()
-                            await persister.removeClient()
-                            window.location.reload()
-                        }}
+                        onClick={reloadApp}
                         className="btn reload"
                         title="Reloading can help with issues like outdated cache or version conflicts."
                     >
