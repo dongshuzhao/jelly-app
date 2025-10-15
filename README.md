@@ -49,6 +49,7 @@ A lightweight & elegant music interface for Jellyfin. Made to be intuitive and m
     -   **Instant Mix:** Enjoy curated playlists directly from your music library on a standalone page.
 -   **Queue:** Effortlessly manage and reorder tracks with the enhanced and improved Queue functionality.
 -   **Crossfade:** Smoothly transition between tracks for a seamless and immersive listening experience.
+-   **Preload:** Intelligently preload the next track in advance to ensure smooth, uninterrupted playback without buffering delays.
 -   **Synchronized Lyrics:** Enjoy your favorite songs in a new way with a spectacular UI showing perfectly timed lyrics that appear line-by-line as you listen.
 -   **Smart Fetching:** Caches your music efficiently for instant, smooth playback.
 -   **Offline Sync:** Download individual songs, full albums, playlists, or artists for offline playback.
@@ -153,6 +154,36 @@ You can also build Jelly Music App using Docker.
         -e LOCK_JELLYFIN_URL=false \
         -p 80:80 jelly-music-app:latest
     ```
+
+#### Docker Compose
+
+For easier container management, you can use Docker Compose. A `docker-compose.yaml` file is provided in the repository with sensible defaults.
+
+1.  Copy the example environment file and customize it for your setup:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  Edit the `.env` file with your Jellyfin server URL and preferences:
+
+    ```env
+    JELLYAPP_PORT=80
+    JELLYAPP_DEFAULT_URL=https://demo.jellyfin.org/stable
+    JELLYAPP_LOCK_URL=true
+    ```
+
+3.  Start the container using Docker Compose:
+
+    ```bash
+    docker-compose up -d
+    ```
+
+The `docker-compose.yaml` file uses environment variables with the following defaults:
+
+-   `JELLYAPP_PORT`: External port to expose (default: `80`)
+-   `JELLYAPP_DEFAULT_URL`: Default Jellyfin server URL (default: `https://demo.jellyfin.org/stable`)
+-   `JELLYAPP_LOCK_URL`: Lock the Jellyfin URL input (default: `false`)
 
 ### App Configuration
 

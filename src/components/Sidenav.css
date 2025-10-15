@@ -774,6 +774,7 @@ html.winOS .sidenav > .sidenav_wrapper > .sidenav_footer {
 }
 
 .sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon {
+    position: relative;
     padding: 6px;
     border-radius: 20px;
     transition: background-color 0.2s ease-out;
@@ -784,12 +785,30 @@ html.winOS .sidenav > .sidenav_wrapper > .sidenav_footer {
 }
 
 .sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon > svg {
+    position: relative;
     fill: var(--font-color);
     transition: fill 0.2s ease-out;
 }
 
 .sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.active > svg {
     fill: var(--font-color-active);
+}
+
+.sidenav > .sidenav_wrapper > .sidenav_footer > .account > .actions > .icon.synced.active-sync > svg path:last-child {
+    clip-path: inset(100% 0 0 0);
+    animation: syncColorSweep 1.6s linear infinite;
+}
+
+@keyframes syncColorSweep {
+    0% {
+        clip-path: inset(0 0 100% 0);
+    }
+    50% {
+        clip-path: inset(0% 0 0 0);
+    }
+    100% {
+        clip-path: inset(100% 0 0 0);
+    }
 }
 
 /* Responsive */

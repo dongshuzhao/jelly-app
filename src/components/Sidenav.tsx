@@ -1,17 +1,18 @@
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client'
 import { BookmarkFillIcon, GearIcon } from '@primer/octicons-react'
 import { ChangeEvent, useEffect, useRef, useState, WheelEvent } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { MediaItem } from '../api/jellyfin'
 import '../App.css'
 import { useDownloadContext } from '../context/DownloadContext/DownloadContext'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { buildUrlWithSavedFilters } from '../context/FilterContext/FilterContext'
-import { useJellyfinContext } from '../context/JellyfinContext/JellyfinContext'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
 import { useScrollContext } from '../context/ScrollContext/ScrollContext'
 import { useSidenavContext } from '../context/SidenavContext/SidenavContext'
 import { useJellyfinPlaylistsList } from '../hooks/Jellyfin/useJellyfinPlaylistsList'
+import { useJellyfinSearch } from '../hooks/Jellyfin/useJellyfinSearch'
+import { formatFileSize } from '../utils/formatFileSize'
 import { InlineLoader } from './InlineLoader'
 import './Sidenav.css'
 import {
@@ -27,20 +28,17 @@ import {
 } from './SvgIcons'
 
 export const Sidenav = (props: { username: string }) => {
-    const api = useJellyfinContext()
     const playback = usePlaybackContext()
+    const navigate = useNavigate()
     const searchInputRef = useRef<HTMLInputElement>(null)
     const { showSidenav, closeSidenav } = useSidenavContext()
 
     const { playlists, loading, error } = useJellyfinPlaylistsList()
     const { disabled, setDisabled } = useScrollContext()
     const [searchQuery, setSearchQuery] = useState(new URLSearchParams(location.search).get('search') || '')
-    const [searchResults, setSearchResults] = useState<MediaItem[]>([])
-    const [searchLoading, setSearchLoading] = useState(false)
-    const [searchError, setSearchError] = useState<string | null>(null)
-    const [searchAttempted, setSearchAttempted] = useState(false)
+    const { searchResults, searchLoading, searchError, searchAttempted } = useJellyfinSearch(searchQuery)
     const dropdown = useDropdownContext()
-    const { storageStats } = useDownloadContext()
+    const { storageStats, queueCount } = useDownloadContext()
 
     const handleVolumeChange = (e: ChangeEvent<HTMLInputElement>) => {
         const newVolume = parseFloat(e.target.value)
@@ -54,58 +52,12 @@ export const Sidenav = (props: { username: string }) => {
         playback.setVolume(newVolume)
     }
 
-    useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            const fetchSearchResults = async () => {
-                if (!searchQuery || !api.auth.serverUrl || !api.auth.token || !api.auth.userId) {
-                    setSearchResults([])
-                    setSearchAttempted(false)
-                    return
-                }
-
-                setSearchLoading(true)
-                setSearchError(null)
-                setSearchAttempted(true)
-
-                try {
-                    // Fetch artists from /Artists endpoint
-                    const [artistResponse, itemsResponse, genreResponse] = await Promise.all([
-                        api.searchArtists(searchQuery, 20),
-                        api.searchItems(searchQuery, 40),
-                        api.searchGenres(searchQuery, 20),
-                    ])
-
-                    // Fetch songs, albums, and playlists from /Items endpoint
-                    const artists = artistResponse.slice(0, 4)
-                    const songs = itemsResponse.filter(item => item.Type === 'Audio').slice(0, 6)
-                    const albums = itemsResponse.filter(item => item.Type === 'MusicAlbum').slice(0, 4)
-                    const playlists = itemsResponse.filter(item => item.Type === 'Playlist').slice(0, 4)
-                    const genres = genreResponse.slice(0, 4)
-
-                    const limitedResults = [...songs, ...artists, ...albums, ...playlists, ...genres]
-                    setSearchResults(limitedResults)
-                } catch (err) {
-                    console.error('Search Error:', err)
-                    setSearchError('Failed to load search results')
-                } finally {
-                    setSearchLoading(false)
-                }
-            }
-
-            fetchSearchResults()
-        }, 200)
-
-        return () => clearTimeout(debounceTimer)
-    }, [searchQuery, api.auth.serverUrl, api.auth.token, api.auth.userId, api])
-
     const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value)
     }
 
     const handleClearSearch = () => {
         setSearchQuery('')
-        setSearchResults([])
-        setSearchAttempted(false)
     }
 
     const handleSongClick = (song: MediaItem) => {
@@ -121,6 +73,23 @@ export const Sidenav = (props: { username: string }) => {
             closeSidenav()
         }
     }
+
+    // Debounced URL update for search query
+    useEffect(() => {
+        const debounceTimer = setTimeout(() => {
+            const params = new URLSearchParams(location.search)
+            if (searchQuery) {
+                params.set('search', searchQuery)
+            } else {
+                params.delete('search')
+            }
+            const newSearch = params.toString()
+            const newUrl = newSearch ? `?${newSearch}` : location.pathname
+            navigate(newUrl, { replace: true })
+        }, 200)
+
+        return () => clearTimeout(debounceTimer)
+    }, [searchQuery, navigate])
 
     useEffect(() => {
         const focusSearch = (e: KeyboardEvent) => {
@@ -268,15 +237,17 @@ export const Sidenav = (props: { username: string }) => {
                                                                 ? 'artist'
                                                                 : item.Type === BaseItemKind.MusicAlbum
                                                                 ? 'album'
+                                                                : item.Type === BaseItemKind.MusicGenre
+                                                                ? 'genre'
                                                                 : item.Type?.toLowerCase()
                                                         }/${
-                                                            item.Type === BaseItemKind.Genre
+                                                            item.Type === BaseItemKind.MusicGenre
                                                                 ? encodeURIComponent(item.Name)
                                                                 : item.Id
                                                         }`}
                                                         onClick={closeSidenav}
                                                         className={`result ${itemClass}`}
-                                                        {...(item.Type !== BaseItemKind.Genre && {
+                                                        {...(item.Type !== BaseItemKind.MusicGenre && {
                                                             onContextMenu: e =>
                                                                 dropdown.onContextMenu(e, { item: item }),
                                                             onTouchStart: e => dropdown.onTouchStart(e, { item }),
@@ -311,7 +282,7 @@ export const Sidenav = (props: { username: string }) => {
                                                             </div>
                                                         )}
 
-                                                        {item.Type === BaseItemKind.Genre && (
+                                                        {item.Type === BaseItemKind.MusicGenre && (
                                                             <div className="type genre">
                                                                 <div className="icon" title="Genre">
                                                                     <BookmarkFillIcon size={14} />
@@ -395,8 +366,21 @@ export const Sidenav = (props: { username: string }) => {
                                 </NavLink>
                             )}
 
-                            {storageStats.trackCount > 0 && (
-                                <NavLink to="/synced" className="icon synced" onClick={closeSidenav} title="Synced">
+                            {(storageStats.trackCount > 0 || queueCount > 0) && (
+                                <NavLink
+                                    to="/synced"
+                                    className={`icon synced ${queueCount > 0 ? 'active-sync' : ''}`}
+                                    onClick={closeSidenav}
+                                    title={`Synced - ${storageStats.trackCount} Track${
+                                        storageStats.trackCount === 1 ? '' : 's'
+                                    }${
+                                        queueCount > 0
+                                            ? ` (${queueCount} track${queueCount === 1 ? '' : 's'} in queue)`
+                                            : ''
+                                    } / ${formatFileSize(
+                                        storageStats.trackCount === 0 ? 0 : storageStats?.indexedDB || 0
+                                    )} Used`}
+                                >
                                     <DownloadingIcon width={16} height={16} />
                                 </NavLink>
                             )}

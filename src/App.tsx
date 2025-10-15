@@ -16,6 +16,7 @@ import { DropdownContextProvider } from './context/DropdownContext/DropdownConte
 import { HistoryContextProvider } from './context/HistoryContext/HistoryContextProvider'
 import { JellyfinContextProvider } from './context/JellyfinContext/JellyfinContextProvider'
 import { PageTitleProvider } from './context/PageTitleContext/PageTitleProvider'
+import { usePlaybackContext } from './context/PlaybackContext/PlaybackContext'
 import { PlaybackContextProvider } from './context/PlaybackContext/PlaybackContextProvider'
 import { ScrollContextProvider } from './context/ScrollContext/ScrollContextProvider'
 import { useSidenavContext } from './context/SidenavContext/SidenavContext'
@@ -32,6 +33,7 @@ import { Downloads } from './pages/Downloads'
 import { Favorites } from './pages/Favorites'
 import { FrequentlyPlayed } from './pages/FrequentlyPlayed'
 import { Genre } from './pages/Genre'
+import { Genres } from './pages/Genres'
 import { Home } from './pages/Home'
 import { InstantMix } from './pages/InstantMix'
 import { Login } from './pages/Login'
@@ -195,8 +197,18 @@ const MainLayout = ({ auth, handleLogout }: { auth: AuthData; handleLogout: () =
 
     const { showSidenav, toggleSidenav } = useSidenavContext()
     const dropdownContext = useDropdownContext()
+    const { maxWidth } = usePlaybackContext()
     const isDropdownOpen = dropdownContext?.isOpen || false
     const isTouchDevice = dropdownContext?.isTouchDevice || false
+
+    useEffect(() => {
+        const root = document.documentElement
+        if (maxWidth === 'wide') {
+            root.style.setProperty('--interface-max-width', '100%')
+        } else {
+            root.style.setProperty('--interface-max-width', `${maxWidth}px`)
+        }
+    }, [maxWidth])
 
     const memoSettings = useCallback(() => {
         return <Settings onLogout={handleLogout} />
@@ -236,6 +248,7 @@ const MainLayout = ({ auth, handleLogout }: { auth: AuthData; handleLogout: () =
                                 element={<Main content={AlbumArtists} filterType={'mediaItems'} />}
                             />
                             <Route path="/genre/:genre" element={<Main content={Genre} filterType={'mediaItems'} />} />
+                            <Route path="/genres" element={<Main content={Genres} filterType={'mediaItems'} />} />
                             <Route
                                 path="/playlist/:playlistId"
                                 element={<Main content={Playlist} filterType={'mediaItemsPlaylist'} />}

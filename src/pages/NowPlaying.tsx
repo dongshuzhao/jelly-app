@@ -3,16 +3,9 @@ import { ChangeEvent, useEffect, WheelEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { JellyImg } from '../components/JellyImg'
 import { Progressbar } from '../components/Main'
+import { DownloadIndicators } from '../components/MediaList'
 import { Squircle } from '../components/Squircle'
-import {
-    DeletingIcon,
-    DownloadedIcon,
-    DownloadingIcon,
-    LyricsIcon,
-    MoreIcon,
-    QueueIcon,
-    TracksIcon,
-} from '../components/SvgIcons'
+import { LyricsIcon, MoreIcon, QueueIcon, TracksIcon } from '../components/SvgIcons'
 import { TrackBitrate } from '../components/TrackBitrate'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { useHistoryContext } from '../context/HistoryContext/HistoryContext'
@@ -193,27 +186,12 @@ export const NowPlaying = () => {
                                         </span>{' '}
                                         kbps
                                     </div>
-                                    {currentTrack?.offlineState && (
-                                        <div className="download-state">
-                                            {currentTrack?.offlineState === 'downloading' && (
-                                                <div className="icon downloading" title="Syncing...">
-                                                    <DownloadingIcon width={12} height={12} />
-                                                </div>
-                                            )}
 
-                                            {currentTrack?.offlineState === 'downloaded' && (
-                                                <div className="icon downloaded" title="Synced">
-                                                    <DownloadedIcon width={12} height={12} />
-                                                </div>
-                                            )}
-
-                                            {currentTrack?.offlineState === 'deleting' && (
-                                                <div className="icon deleting" title="Unsyncing...">
-                                                    <DeletingIcon width={12} height={12} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                    <DownloadIndicators
+                                        offlineState={currentTrack?.offlineState}
+                                        size={12}
+                                        itemId={currentTrack?.Id}
+                                    />
                                 </div>
                                 <div className="duration">{playback.formatTime(duration.duration)}</div>
                             </div>

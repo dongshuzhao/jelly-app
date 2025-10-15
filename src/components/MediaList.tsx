@@ -17,8 +17,8 @@ import { HeartFillIcon } from '@primer/octicons-react'
 import { InfiniteData } from '@tanstack/react-query'
 import { ReactNode, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Virtuoso } from 'react-virtuoso'
 import { MediaItem } from '../api/jellyfin'
+import { useDownloadContext } from '../context/DownloadContext/DownloadContext'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { IMenuItems } from '../context/DropdownContext/DropdownContextProvider'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
@@ -30,6 +30,7 @@ import { IReviver } from './PlaybackManager'
 import { Skeleton } from './Skeleton'
 import { Squircle } from './Squircle'
 import { DeletingIcon, DownloadedIcon, DownloadingIcon, PlaystateAnimationMedalist } from './SvgIcons'
+import { VirtuosoWindow } from './VirtuosoWindow'
 
 export const MediaList = ({
     items = [],
@@ -45,12 +46,16 @@ export const MediaList = ({
     disableActions = false,
     albumDisplayMode = 'artist',
     isDraggable,
+    removeButton,
+    disableEvents = false,
+    className,
+    preferItemType = false,
 }: {
     items: MediaItem[] | undefined
     infiniteData: InfiniteData<MediaItem[], unknown> | undefined
     indexOffset?: number
     isLoading: boolean
-    type: 'song' | 'album' | 'artist' | 'playlist'
+    type: 'song' | 'album' | 'artist' | 'playlist' | 'genre'
     title: string
     disableUrl?: boolean
     reviver?: IReviver | 'persistAll'
@@ -59,6 +64,10 @@ export const MediaList = ({
     disableActions?: boolean
     albumDisplayMode?: 'artist' | 'year' | 'both'
     isDraggable?: boolean
+    removeButton?: (item: MediaItem) => ReactNode
+    disableEvents?: boolean
+    className?: string
+    preferItemType?: boolean
 }) => {
     const playback = usePlaybackContext()
     const navigate = useNavigate()
@@ -77,6 +86,20 @@ export const MediaList = ({
     const dropdown = useDropdownContext()
 
     const [activeId, setActiveId] = useState<string | null>(null)
+
+    const getItemType = (item: MediaItem | { isPlaceholder: true } | undefined): typeof type => {
+        if (!preferItemType || !item || 'isPlaceholder' in item) {
+            return type
+        }
+
+        if (item.Type === 'Audio') return 'song'
+        if (item.Type === 'MusicAlbum') return 'album'
+        if (item.Type === 'MusicArtist') return 'artist'
+        if (item.Type === 'Playlist') return 'playlist'
+        if (item.Type === 'MusicGenre') return 'genre'
+
+        return type
+    }
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event
@@ -113,7 +136,8 @@ export const MediaList = ({
     }
 
     const handleSongClick = (item: MediaItem, index: number) => {
-        if (type === 'song') {
+        const itemType = getItemType(item)
+        if (itemType === 'song') {
             if (isEqual(playback.currentTrack, item)) {
                 playback.togglePlayPause()
             } else {
@@ -126,31 +150,39 @@ export const MediaList = ({
 
     const renderItem = (
         index: number,
-        item: MediaItem | { isPlaceholder: true },
+        item: MediaItem | { isPlaceholder: true } | undefined,
         listeners?: SyntheticListenerMap | undefined
     ) => {
-        if ('isPlaceholder' in item) {
-            if (type === 'album') {
+        const itemType = getItemType(item)
+
+        if (!item || 'isPlaceholder' in item) {
+            if (itemType === 'album') {
                 return (
-                    <div className="media-item album-item" ref={el => setRowRefs(index, el)}>
+                    <div className={`media-item album-item ${className || ''}`} ref={el => setRowRefs(index, el)}>
                         <Skeleton type="album" />
                     </div>
                 )
-            } else if (type === 'artist') {
+            } else if (itemType === 'artist') {
                 return (
-                    <div className="media-item artist-item" ref={el => setRowRefs(index, el)}>
+                    <div className={`media-item artist-item ${className || ''}`} ref={el => setRowRefs(index, el)}>
                         <Skeleton type="artist" />
                     </div>
                 )
-            } else if (type === 'playlist') {
+            } else if (itemType === 'playlist') {
                 return (
-                    <div className="media-item album-item" ref={el => setRowRefs(index, el)}>
+                    <div className={`media-item album-item ${className || ''}`} ref={el => setRowRefs(index, el)}>
                         <Skeleton type="album" />
+                    </div>
+                )
+            } else if (itemType === 'genre') {
+                return (
+                    <div className={`media-item genre-item ${className || ''}`} ref={el => setRowRefs(index, el)}>
+                        <Skeleton type="genre" />
                     </div>
                 )
             } else {
                 return (
-                    <div className="media-item song-item" ref={el => setRowRefs(index, el)}>
+                    <div className={`media-item song-item ${className || ''}`} ref={el => setRowRefs(index, el)}>
                         <Skeleton type="song" />
                     </div>
                 )
@@ -160,22 +192,30 @@ export const MediaList = ({
         const isActive = isEqual(dropdown.selectedItem, item) && dropdown.isOpen
 
         const itemClass = [
-            type === 'song' && isEqual(playback.currentTrack, item) ? (playback.isPlaying ? 'playing' : 'paused') : '',
+            itemType === 'song' && isEqual(playback.currentTrack, item)
+                ? playback.isPlaying
+                    ? 'playing'
+                    : 'paused'
+                : '',
             isActive ? 'active' : '',
         ]
             .filter(Boolean)
             .join(' ')
 
-        if (type === 'album') {
+        if (itemType === 'album') {
             return (
                 <div
-                    className={`media-item album-item ${itemClass}`}
-                    onClick={() => navigate(`/album/${item.Id}`)}
+                    className={`media-item album-item ${itemClass} ${className || ''}`}
                     ref={el => setRowRefs(index, el)}
-                    onContextMenu={e => dropdown.onContextMenu(e, { item }, false, hidden)}
-                    onTouchStart={e => dropdown.onTouchStart(e, { item }, false, hidden)}
-                    onTouchMove={dropdown.onTouchClear}
-                    onTouchEnd={dropdown.onTouchClear}
+                    {...(disableEvents
+                        ? {}
+                        : {
+                              onClick: () => navigate(`/album/${item.Id}`),
+                              onContextMenu: e => dropdown.onContextMenu(e, { item }, false, hidden),
+                              onTouchStart: e => dropdown.onTouchStart(e, { item }, false, hidden),
+                              onTouchMove: dropdown.onTouchClear,
+                              onTouchEnd: dropdown.onTouchClear,
+                          })}
                 >
                     <Squircle width={46} height={46} cornerRadius={6} className="media-state">
                         <JellyImg item={item} type={'Primary'} width={46} height={46} />
@@ -204,19 +244,24 @@ export const MediaList = ({
                         disableActions={disableActions}
                         listeners={listeners}
                         isDraggable={isDraggable}
+                        removeButton={removeButton}
                     />
                 </div>
             )
-        } else if (type === 'artist') {
+        } else if (itemType === 'artist') {
             return (
                 <div
-                    className={`media-item artist-item ${itemClass}`}
-                    onClick={() => navigate(`/artist/${item.Id}`)}
+                    className={`media-item artist-item ${itemClass} ${className || ''}`}
                     ref={el => setRowRefs(index, el)}
-                    onContextMenu={e => dropdown.onContextMenu(e, { item }, false, hidden)}
-                    onTouchStart={e => dropdown.onTouchStart(e, { item }, false, hidden)}
-                    onTouchMove={dropdown.onTouchClear}
-                    onTouchEnd={dropdown.onTouchClear}
+                    {...(disableEvents
+                        ? {}
+                        : {
+                              onClick: () => navigate(`/artist/${item.Id}`),
+                              onContextMenu: e => dropdown.onContextMenu(e, { item }, false, hidden),
+                              onTouchStart: e => dropdown.onTouchStart(e, { item }, false, hidden),
+                              onTouchMove: dropdown.onTouchClear,
+                              onTouchEnd: dropdown.onTouchClear,
+                          })}
                 >
                     <div className="media-state">
                         <JellyImg item={item} type={'Primary'} width={36} height={36} />
@@ -230,19 +275,24 @@ export const MediaList = ({
                         disableActions={disableActions}
                         listeners={listeners}
                         isDraggable={isDraggable}
+                        removeButton={removeButton}
                     />
                 </div>
             )
-        } else if (type === 'playlist') {
+        } else if (itemType === 'playlist') {
             return (
                 <div
-                    className={`media-item playlist-item ${itemClass}`}
-                    onClick={() => navigate(`/playlist/${item.Id}`)}
+                    className={`media-item playlist-item ${itemClass} ${className || ''}`}
                     ref={el => setRowRefs(index, el)}
-                    onContextMenu={e => dropdown.onContextMenu(e, { item }, false, hidden)}
-                    onTouchStart={e => dropdown.onTouchStart(e, { item }, false, hidden)}
-                    onTouchMove={dropdown.onTouchClear}
-                    onTouchEnd={dropdown.onTouchClear}
+                    {...(disableEvents
+                        ? {}
+                        : {
+                              onClick: () => navigate(`/playlist/${item.Id}`),
+                              onContextMenu: e => dropdown.onContextMenu(e, { item }, false, hidden),
+                              onTouchStart: e => dropdown.onTouchStart(e, { item }, false, hidden),
+                              onTouchMove: dropdown.onTouchClear,
+                              onTouchEnd: dropdown.onTouchClear,
+                          })}
                 >
                     <Squircle width={46} height={46} cornerRadius={6} className="media-state">
                         <JellyImg item={item} type={'Primary'} width={46} height={46} />
@@ -262,19 +312,55 @@ export const MediaList = ({
                         disableActions={disableActions}
                         listeners={listeners}
                         isDraggable={isDraggable}
+                        removeButton={removeButton}
+                    />
+                </div>
+            )
+        } else if (itemType === 'genre') {
+            return (
+                <div
+                    className={`media-item genre-item ${itemClass} ${className || ''}`}
+                    ref={el => setRowRefs(index, el)}
+                    {...(disableEvents
+                        ? {}
+                        : {
+                              onClick: () => navigate(`/genre/${encodeURIComponent(item.Name || '')}`),
+                              onContextMenu: e => dropdown.onContextMenu(e, { item }, false, hidden),
+                              onTouchStart: e => dropdown.onTouchStart(e, { item }, false, hidden),
+                              onTouchMove: dropdown.onTouchClear,
+                              onTouchEnd: dropdown.onTouchClear,
+                          })}
+                >
+                    <Squircle width={36} height={36} cornerRadius={8} className="media-state">
+                        <JellyImg item={item} type={'Primary'} width={36} height={36} />
+                    </Squircle>
+                    <div className="media-details">
+                        <span className="song-name">{item.Name || 'Unknown Genre'}</span>
+                    </div>
+
+                    <MediaIndicators
+                        item={item}
+                        disableActions={disableActions}
+                        listeners={listeners}
+                        isDraggable={isDraggable}
+                        removeButton={removeButton}
                     />
                 </div>
             )
         } else {
             return (
                 <div
-                    className={`media-item song-item ${itemClass}`}
-                    onClick={() => handleSongClick(item, index)}
+                    className={`media-item song-item ${itemClass} ${className || ''}`}
                     ref={el => setRowRefs(index, el)}
-                    onContextMenu={e => dropdown.onContextMenu(e, { item }, false, hidden)}
-                    onTouchStart={e => dropdown.onTouchStart(e, { item }, false, hidden)}
-                    onTouchMove={dropdown.onTouchClear}
-                    onTouchEnd={dropdown.onTouchClear}
+                    {...(disableEvents
+                        ? {}
+                        : {
+                              onClick: () => handleSongClick(item, index),
+                              onContextMenu: e => dropdown.onContextMenu(e, { item }, false, hidden),
+                              onTouchStart: e => dropdown.onTouchStart(e, { item }, false, hidden),
+                              onTouchMove: dropdown.onTouchClear,
+                              onTouchEnd: dropdown.onTouchClear,
+                          })}
                 >
                     <Squircle width={46} height={46} cornerRadius={6} className="media-state">
                         <JellyImg item={item} type={'Primary'} width={46} height={46} />
@@ -309,6 +395,7 @@ export const MediaList = ({
                         disableActions={disableActions}
                         listeners={listeners}
                         isDraggable={isDraggable}
+                        removeButton={removeButton}
                     />
                 </div>
             )
@@ -328,7 +415,9 @@ export const MediaList = ({
                     ? 'No albums were found'
                     : type === 'artist'
                     ? 'No artists were found'
-                    : 'No playlists were found'}
+                    : type === 'playlist'
+                    ? 'No playlists were found'
+                    : 'No genres were found'}
             </div>
         )
     }
@@ -343,9 +432,8 @@ export const MediaList = ({
                     renderItem={renderItem}
                     activeId={activeId}
                 >
-                    <Virtuoso
+                    <VirtuosoWindow
                         data={displayItems}
-                        useWindowScroll
                         itemContent={(index, item) => {
                             if ('isPlaceholder' in item) {
                                 return renderItem(index, item)
@@ -366,13 +454,7 @@ export const MediaList = ({
             )}
 
             {!isDraggable && (
-                <Virtuoso
-                    data={displayItems}
-                    useWindowScroll
-                    itemContent={renderItem}
-                    endReached={loadMore}
-                    overscan={800}
-                />
+                <VirtuosoWindow data={displayItems} itemContent={renderItem} endReached={loadMore} overscan={800} />
             )}
         </ul>
     )
@@ -443,40 +525,63 @@ const SortableItem = ({
     )
 }
 
+export const DownloadIndicators = ({
+    offlineState,
+    size,
+    itemId,
+}: {
+    offlineState: string | undefined
+    size: number
+    itemId: string | undefined
+}) => {
+    const { queue } = useDownloadContext()
+    const isActiveInQueue = queue[0]?.mediaItem.Id === itemId || queue[0]?.containerId === itemId
+
+    if (!offlineState) {
+        return null
+    }
+
+    return (
+        <div className="download-state">
+            {offlineState === 'downloading' && (
+                <div className={`icon downloading ${isActiveInQueue ? 'active-sync' : ''}`} title="Syncing...">
+                    <DownloadingIcon width={size} height={size} />
+                </div>
+            )}
+
+            {offlineState === 'downloaded' && (
+                <div className="icon downloaded" title="Synced">
+                    <DownloadedIcon width={size} height={size} />
+                </div>
+            )}
+
+            {offlineState === 'deleting' && (
+                <div className={`icon deleting ${isActiveInQueue ? 'active-sync' : ''}`} title="Unsyncing...">
+                    <DeletingIcon width={size} height={size} />
+                </div>
+            )}
+        </div>
+    )
+}
+
 const MediaIndicators = ({
     item,
     disableActions,
     listeners,
     isDraggable,
+    removeButton,
 }: {
     item: MediaItem
     disableActions: boolean
     listeners?: SyntheticListenerMap | undefined
     isDraggable?: boolean
+    removeButton?: (item: MediaItem) => ReactNode
 }) => {
     return (
         <div className="media-indicators">
-            {item.offlineState && (
-                <div className="download-state">
-                    {item.offlineState === 'downloading' && (
-                        <div className="icon downloading" title="Syncing...">
-                            <DownloadingIcon width={16} height={16} />
-                        </div>
-                    )}
+            {removeButton && removeButton(item)}
 
-                    {item.offlineState === 'downloaded' && (
-                        <div className="icon downloaded" title="Synced">
-                            <DownloadedIcon width={16} height={16} />
-                        </div>
-                    )}
-
-                    {item.offlineState === 'deleting' && (
-                        <div className="icon deleting" title="Unsyncing...">
-                            <DeletingIcon width={16} height={16} />
-                        </div>
-                    )}
-                </div>
-            )}
+            <DownloadIndicators offlineState={item.offlineState} size={16} itemId={item.Id} />
 
             {!disableActions && item.UserData?.IsFavorite && location.pathname !== '/favorites' && (
                 <div className="favorited" title="Favorited">

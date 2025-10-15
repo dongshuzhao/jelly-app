@@ -2,7 +2,8 @@ import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models'
 import { ArrowLeftIcon, ChevronRightIcon, HeartFillIcon, XIcon } from '@primer/octicons-react'
 import { Fragment, ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MediaItem } from '../../api/jellyfin'
+import { JELLYFIN_MAX_LIMIT, MediaItem } from '../../api/jellyfin'
+import { InlineLoader } from '../../components/InlineLoader'
 import { JellyImg } from '../../components/JellyImg'
 import { Squircle } from '../../components/Squircle'
 import { TracksIcon } from '../../components/SvgIcons'
@@ -14,11 +15,12 @@ import { useJellyfinContext } from '../JellyfinContext/JellyfinContext'
 import { usePlaybackContext } from '../PlaybackContext/PlaybackContext'
 import { useScrollContext } from '../ScrollContext/ScrollContext'
 import { DropdownContext } from './DropdownContext'
+import { DropdownItem } from './DropdownItem'
 
 export type IMenuItems = { [x in keyof IDropdownContext['menuItems']]?: boolean }
 export type IDropdownContext = ReturnType<typeof useInitialState>
 
-type IContext = { item: MediaItem; playlistId?: string }
+type IContext = { item: MediaItem; playlistId?: string; customContainer?: string }
 
 const useInitialState = () => {
     const [isOpen, setIsOpen] = useState(false)
@@ -26,7 +28,7 @@ const useInitialState = () => {
     const [context, setContext] = useState<IContext>()
     const [subDropdown, setSubDropdown] = useState<{
         isOpen: boolean
-        type: 'view-artists' | 'add-playlist' | ''
+        type: 'view-artists' | 'add-playlist' | 'rename-playlist' | ''
         flipX: boolean
         flipY: boolean
         width: number
@@ -55,11 +57,14 @@ const useInitialState = () => {
     const { playlists } = useJellyfinPlaylistsList()
     const { addToFavorites, removeFromFavorites } = useFavorites()
     const { addToDownloads, removeFromDownloads } = useDownloadContext()
-    const { addToPlaylist, addItemsToPlaylist, removeFromPlaylist, createPlaylist, deletePlaylist } = usePlaylists()
+    const { addItemsToPlaylist, removeFromPlaylist, createPlaylist, deletePlaylist, renamePlaylist } = usePlaylists()
 
     const menuRef = useRef<HTMLDivElement>(null)
     const subMenuRef = useRef<HTMLDivElement>(null)
     const [playlistName, setPlaylistName] = useState<string>('')
+    const [renamePlaylistName, setRenamePlaylistName] = useState<string>('')
+    const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false)
+    const [isRenamingPlaylist, setIsRenamingPlaylist] = useState(false)
 
     // Resize handler to update isTouchDevice and reset dropdown on viewport changes
     useEffect(() => {
@@ -116,31 +121,103 @@ const useInitialState = () => {
         []
     )
 
+    const handleRenameInputChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => setRenamePlaylistName(e.target.value),
+        []
+    )
+
+    const expandItems = useCallback(
+        async (item: MediaItem, customContainer?: string) => {
+            if (item.Type === BaseItemKind.MusicAlbum) {
+                const tracks = await api.getAlbumDetails(item.Id)
+                return tracks.tracks
+            } else if (item.Type === BaseItemKind.MusicArtist) {
+                const tracks = await api.getArtistDetails(item.Id)
+                return tracks.tracks
+            } else if (item.Type === BaseItemKind.Playlist) {
+                const tracks = await api.getPlaylistAllTracks(item.Id)
+                return tracks
+            } else if (item.Type === BaseItemKind.MusicGenre) {
+                const genreTracks = await api.getGenreTracks(item.Name, 0, JELLYFIN_MAX_LIMIT)
+                return genreTracks
+            } else if (customContainer === 'favorites') {
+                const favorites = await api.getFavoriteTracks(0, JELLYFIN_MAX_LIMIT)
+                return favorites
+            } else {
+                return [item]
+            }
+        },
+        [api]
+    )
+
     const handleInputKeyDown = useCallback(
         async (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'Enter' && playlistName.trim() && context) {
+            if (!context) return
+
+            if (e.key === 'Enter' && playlistName.trim()) {
                 const playlist = await createPlaylist(playlistName.trim())
-                await addToPlaylist(context.item, playlist.Id!)
+                await addItemsToPlaylist(await expandItems(context.item, context.customContainer), playlist.Id!)
                 setPlaylistName('')
                 closeDropdown()
             } else if (e.key === 'Escape') {
                 setPlaylistName('')
             }
         },
-        [addToPlaylist, closeDropdown, context, createPlaylist, playlistName]
+        [addItemsToPlaylist, closeDropdown, context, createPlaylist, expandItems, playlistName]
+    )
+
+    const handleRenameInputKeyDown = useCallback(
+        async (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (!context) return
+
+            if (e.key === 'Enter' && renamePlaylistName.trim()) {
+                await renamePlaylist(context.item.Id, renamePlaylistName.trim())
+                setRenamePlaylistName('')
+                closeDropdown()
+            } else if (e.key === 'Escape') {
+                setRenamePlaylistName('')
+            }
+        },
+        [closeDropdown, context, renamePlaylist, renamePlaylistName]
     )
 
     const handleCreateClick = useCallback(
         async (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (!context || isCreatingPlaylist) return
+
             e.stopPropagation()
-            if (playlistName.trim() && context) {
-                const playlist = await createPlaylist(playlistName.trim())
-                await addToPlaylist(context.item, playlist.Id!)
-                setPlaylistName('')
-                closeDropdown()
+            if (playlistName.trim()) {
+                setIsCreatingPlaylist(true)
+                try {
+                    const playlist = await createPlaylist(playlistName.trim())
+                    await addItemsToPlaylist(await expandItems(context.item, context.customContainer), playlist.Id!)
+                    setPlaylistName('')
+                    closeDropdown()
+                } finally {
+                    setIsCreatingPlaylist(false)
+                }
             }
         },
-        [addToPlaylist, closeDropdown, context, createPlaylist, playlistName]
+        [addItemsToPlaylist, closeDropdown, context, createPlaylist, expandItems, playlistName, isCreatingPlaylist]
+    )
+
+    const handleRenameClick = useCallback(
+        async (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (!context || isRenamingPlaylist) return
+
+            e.stopPropagation()
+            if (renamePlaylistName.trim()) {
+                setIsRenamingPlaylist(true)
+                try {
+                    await renamePlaylist(context.item.Id, renamePlaylistName.trim())
+                    setRenamePlaylistName('')
+                    closeDropdown()
+                } finally {
+                    setIsRenamingPlaylist(false)
+                }
+            }
+        },
+        [closeDropdown, context, renamePlaylist, renamePlaylistName, isRenamingPlaylist]
     )
 
     useEffect(() => {
@@ -176,7 +253,7 @@ const useInitialState = () => {
     }, [closeDropdown, isOpen])
 
     const openSubDropdown = useCallback(
-        (type: 'view-artists' | 'add-playlist', e: React.MouseEvent<HTMLDivElement>) => {
+        (type: 'view-artists' | 'add-playlist' | 'rename-playlist', e: React.MouseEvent<HTMLDivElement>) => {
             const rect = e.currentTarget.getBoundingClientRect()
             setSubDropdown({
                 isOpen: true,
@@ -189,8 +266,13 @@ const useInitialState = () => {
                 measured: false,
                 triggerRect: rect,
             })
+
+            // Set initial value for rename playlist
+            if (type === 'rename-playlist' && context?.item.Name) {
+                setRenamePlaylistName(context.item.Name)
+            }
         },
-        []
+        [context?.item.Name]
     )
 
     useLayoutEffect(() => {
@@ -303,26 +385,10 @@ const useInitialState = () => {
         [isTouchDevice, setDisabled]
     )
 
-    const expandItems = useCallback(
-        async (item: MediaItem) => {
-            if (item.Type === BaseItemKind.MusicAlbum) {
-                const tracks = await api.getAlbumDetails(item.Id)
-                return tracks.tracks
-            } else if (item.Type === BaseItemKind.MusicArtist) {
-                const tracks = await api.getArtistDetails(item.Id)
-                return tracks.tracks
-            } else if (item.Type === BaseItemKind.Playlist) {
-                const tracks = await api.getPlaylistAllTracks(item.Id)
-                return tracks
-            } else {
-                return [item]
-            }
-        },
-        [api]
-    )
-
     const handlePlayNext = useCallback(
         async (item: MediaItem) => {
+            if (!context) return
+
             const insertionPoint = (playback.currentTrackIndex ?? -1) + 1
 
             await playback.updateCurrentPlaylist(async pages => {
@@ -333,7 +399,7 @@ const useInitialState = () => {
 
                     for (let trackIndex = 0; trackIndex < page.length; trackIndex++) {
                         if (trackCounter === insertionPoint) {
-                            const expandedItems = await expandItems(item)
+                            const expandedItems = await expandItems(item, context.customContainer)
                             const markedItems = playback.markAsManuallyAdded(expandedItems)
 
                             return [
@@ -347,7 +413,14 @@ const useInitialState = () => {
                     }
                 }
 
-                const expandedItems = await expandItems(item)
+                if (insertionPoint >= trackCounter) {
+                    const expandedItems = await expandItems(item, context.customContainer)
+                    const markedItems = playback.markAsManuallyAdded(expandedItems)
+
+                    return [...pages.slice(0, pages.length - 1), [...pages[pages.length - 1], ...markedItems]]
+                }
+
+                const expandedItems = await expandItems(item, context.customContainer)
                 const markedItems = playback.markAsManuallyAdded(expandedItems)
 
                 return [
@@ -362,12 +435,14 @@ const useInitialState = () => {
 
             closeDropdown()
         },
-        [closeDropdown, expandItems, playback]
+        [closeDropdown, context, expandItems, playback]
     )
 
     const handleAddToQueue = useCallback(
         async (item: MediaItem) => {
-            const expandedItems = await expandItems(item)
+            if (!context) return
+
+            const expandedItems = await expandItems(item, context.customContainer)
             const markedItems = playback.markAsManuallyAdded(expandedItems)
 
             await playback.updateCurrentPlaylist(async pages => [
@@ -381,7 +456,7 @@ const useInitialState = () => {
 
             closeDropdown()
         },
-        [closeDropdown, expandItems, playback]
+        [closeDropdown, context, expandItems, playback]
     )
 
     const handleRemoveFromQueue = useCallback(
@@ -421,35 +496,35 @@ const useInitialState = () => {
     const menuItems = useMemo(() => {
         return {
             next: (
-                <div
-                    className="dropdown-item play-next"
-                    onClick={async () => await handlePlayNext(context!.item)}
+                <DropdownItem
+                    className="play-next"
+                    onClick={async () => context && (await handlePlayNext(context.item))}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Play next</span>
-                </div>
+                </DropdownItem>
             ),
             add_to_queue: (
-                <div
-                    className="dropdown-item add-queue"
-                    onClick={async () => await handleAddToQueue(context!.item)}
+                <DropdownItem
+                    className="add-queue"
+                    onClick={async () => context && (await handleAddToQueue(context.item))}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Add to queue</span>
-                </div>
+                </DropdownItem>
             ),
             remove_from_queue: (
-                <div
-                    className="dropdown-item remove-queue has-removable"
-                    onClick={async () => handleRemoveFromQueue(context!.item)}
+                <DropdownItem
+                    className="remove-queue has-removable"
+                    onClick={async () => context && (await handleRemoveFromQueue(context.item))}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Remove from queue</span>
-                </div>
+                </DropdownItem>
             ),
             instant_mix: (
-                <div
-                    className="dropdown-item instant-mix"
+                <DropdownItem
+                    className="instant-mix"
                     onClick={async () => {
                         if (!context) return
 
@@ -459,12 +534,14 @@ const useInitialState = () => {
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Go to instant mix</span>
-                </div>
+                </DropdownItem>
             ),
             delete_playlist: (
-                <div
-                    className="dropdown-item delete-playlist has-removable"
+                <DropdownItem
+                    className="delete-playlist has-removable"
                     onClick={async () => {
+                        if (!context) return
+
                         closeDropdown()
 
                         if (context?.item.Id) {
@@ -476,6 +553,60 @@ const useInitialState = () => {
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Delete playlist</span>
+                </DropdownItem>
+            ),
+            rename_playlist: (
+                <div
+                    className={`dropdown-item rename-playlist has-sub-menu${
+                        subDropdown.isOpen && subDropdown.type === 'rename-playlist' ? ' active' : ''
+                    }`}
+                    onMouseEnter={!isTouchDevice ? e => openSubDropdown('rename-playlist', e) : undefined}
+                    onClick={isTouchDevice ? e => openSubDropdown('rename-playlist', e) : undefined}
+                >
+                    <span>Rename playlist</span>
+                    <ChevronRightIcon size={12} className="icon" />
+                    {!isTouchDevice && subDropdown.isOpen && subDropdown.type === 'rename-playlist' && (
+                        <div
+                            ref={subMenuRef}
+                            className={`sub-dropdown${subDropdown.flipX ? ' flip-x' : ''}${
+                                subDropdown.flipY ? ' flip-y' : ''
+                            }`}
+                            style={
+                                !subDropdown.measured || !subDropdown.triggerRect
+                                    ? { visibility: 'hidden', position: 'absolute', left: '-9999px', top: '-9999px' }
+                                    : {
+                                          position: 'absolute',
+                                          top: `${subDropdown.top}px`,
+                                          left: subDropdown.flipX ? 'auto' : '100%',
+                                          right: subDropdown.flipX ? '100%' : 'auto',
+                                      }
+                            }
+                        >
+                            <div className="dropdown-menu">
+                                <DropdownItem>
+                                    <div className="playlist-input-container">
+                                        <input
+                                            value={renamePlaylistName}
+                                            onChange={handleRenameInputChange}
+                                            onKeyDown={handleRenameInputKeyDown}
+                                            onClick={e => e.stopPropagation()}
+                                            placeholder="Rename playlist..."
+                                            className={`playlist-input${renamePlaylistName.trim() ? ' has-text' : ''}`}
+                                            disabled={isRenamingPlaylist}
+                                        />
+
+                                        {isRenamingPlaylist && <InlineLoader />}
+
+                                        {!isRenamingPlaylist && (
+                                            <button className="create-btn" onClick={handleRenameClick}>
+                                                Rename
+                                            </button>
+                                        )}
+                                    </div>
+                                </DropdownItem>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ),
             view_artists: (
@@ -508,14 +639,10 @@ const useInitialState = () => {
                             }
                         >
                             <div className="dropdown-menu">
-                                {context?.item?.ArtistItems?.map(artist => (
-                                    <div
-                                        key={artist.Id}
-                                        className="dropdown-item"
-                                        onClick={() => handleViewArtist(artist.Id)}
-                                    >
+                                {context?.item.ArtistItems?.map(artist => (
+                                    <DropdownItem key={artist.Id} onClick={() => handleViewArtist(artist.Id)}>
                                         {artist.Name || 'Unknown Artist'}
-                                    </div>
+                                    </DropdownItem>
                                 ))}
                             </div>
                         </div>
@@ -523,52 +650,50 @@ const useInitialState = () => {
                 </div>
             ),
             view_artist: (
-                <div
-                    className="dropdown-item view-artist"
-                    onClick={() => handleViewArtist(context?.item?.ArtistItems?.[0].Id)}
+                <DropdownItem
+                    className="view-artist"
+                    onClick={() => handleViewArtist(context?.item.ArtistItems?.[0].Id)}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>View artist</span>
-                </div>
+                </DropdownItem>
             ),
             view_album: (
-                <div
-                    className="dropdown-item view-album"
-                    onClick={() => handleViewAlbum(context!.item)}
+                <DropdownItem
+                    className="view-album"
+                    onClick={() => context && handleViewAlbum(context.item)}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>View album</span>
-                </div>
+                </DropdownItem>
             ),
             add_to_favorite: (
-                <div
-                    className="dropdown-item add-favorite"
+                <DropdownItem
+                    className="add-favorite"
                     onClick={async () => {
-                        closeDropdown()
+                        if (!context) return
 
-                        if (context) {
-                            await addToFavorites(context.item)
-                        }
+                        closeDropdown()
+                        await addToFavorites(context.item)
                     }}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Add to favorites</span>
-                </div>
+                </DropdownItem>
             ),
             remove_from_favorite: (
-                <div
-                    className="dropdown-item remove-favorite has-removable"
+                <DropdownItem
+                    className="remove-favorite has-removable"
                     onClick={async () => {
-                        closeDropdown()
+                        if (!context) return
 
-                        if (context) {
-                            await removeFromFavorites(context.item)
-                        }
+                        closeDropdown()
+                        await removeFromFavorites(context.item)
                     }}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Remove from favorites</span>
-                </div>
+                </DropdownItem>
             ),
             add_to_playlist: (
                 <div
@@ -598,7 +723,7 @@ const useInitialState = () => {
                             }
                         >
                             <div className="dropdown-menu">
-                                <div className="dropdown-item">
+                                <DropdownItem>
                                     <div className="playlist-input-container">
                                         <input
                                             value={playlistName}
@@ -607,29 +732,36 @@ const useInitialState = () => {
                                             onClick={e => e.stopPropagation()}
                                             placeholder="New..."
                                             className={`playlist-input${playlistName.trim() ? ' has-text' : ''}`}
+                                            disabled={isCreatingPlaylist}
                                         />
-                                        <button className="create-btn" onClick={handleCreateClick}>
-                                            Create
-                                        </button>
+
+                                        {isCreatingPlaylist && <InlineLoader />}
+
+                                        {!isCreatingPlaylist && (
+                                            <button className="create-btn" onClick={handleCreateClick}>
+                                                Create
+                                            </button>
+                                        )}
                                     </div>
-                                </div>
+                                </DropdownItem>
 
                                 {playlists.length > 0 && <div className="dropdown-separator" />}
 
                                 {playlists.map(playlist => (
-                                    <div
+                                    <DropdownItem
                                         key={playlist.Id}
-                                        className="dropdown-item"
                                         onClick={async () => {
-                                            closeDropdown()
+                                            if (!context) return
 
-                                            if (context) {
-                                                await addItemsToPlaylist(await expandItems(context.item), playlist.Id)
-                                            }
+                                            closeDropdown()
+                                            await addItemsToPlaylist(
+                                                await expandItems(context.item, context.customContainer),
+                                                playlist.Id
+                                            )
                                         }}
                                     >
                                         {playlist.Name}
-                                    </div>
+                                    </DropdownItem>
                                 ))}
                             </div>
                         </div>
@@ -637,67 +769,70 @@ const useInitialState = () => {
                 </div>
             ),
             remove_from_playlist: context?.playlistId ? (
-                <div
-                    className="dropdown-item remove-playlist has-removable"
+                <DropdownItem
+                    className="remove-playlist has-removable"
                     onClick={async () => {
-                        closeDropdown()
+                        if (!context) return
 
+                        closeDropdown()
                         await removeFromPlaylist(context.item, context.playlistId!)
                     }}
                     onMouseEnter={closeSubDropdown}
                 >
                     <span>Remove from playlist</span>
-                </div>
+                </DropdownItem>
             ) : null,
             download_song:
                 context?.item.offlineState === 'downloaded' ? (
-                    <div
-                        className="dropdown-item remove-song has-removable"
+                    <DropdownItem
+                        className="remove-song has-removable"
                         onClick={async () => {
-                            closeDropdown()
+                            if (!context) return
 
-                            if (context) {
-                                removeFromDownloads(
-                                    await expandItems(context.item),
-                                    context.item.Type === BaseItemKind.Audio ? undefined : context.item
-                                )
-                            }
+                            closeDropdown()
+                            const containerItem = context.customContainer
+                                ? await api.createCustomContainerMediaItem(context.customContainer)
+                                : context.item.Type === BaseItemKind.Audio
+                                ? undefined
+                                : context.item
+                            removeFromDownloads(await expandItems(context.item, context.customContainer), containerItem)
                         }}
                         onMouseEnter={closeSubDropdown}
                     >
                         <span>Unsync from cache</span>
-                    </div>
+                    </DropdownItem>
                 ) : context?.item.offlineState === 'deleting' ? (
-                    <div className="dropdown-item disabled" onMouseEnter={closeSubDropdown}>
+                    <DropdownItem className="disabled" onMouseEnter={closeSubDropdown} disabled>
                         <span>Unsyncing...</span>
-                    </div>
+                    </DropdownItem>
                 ) : !context?.item.offlineState ? (
-                    <div
-                        className="dropdown-item"
+                    <DropdownItem
                         onClick={async () => {
-                            closeDropdown()
+                            if (!context) return
 
-                            if (context) {
-                                addToDownloads(
-                                    await expandItems(context.item),
-                                    context.item.Type === BaseItemKind.Audio ? undefined : context.item
-                                )
-                            }
+                            closeDropdown()
+                            const containerItem = context.customContainer
+                                ? await api.createCustomContainerMediaItem(context.customContainer)
+                                : context.item.Type === BaseItemKind.Audio
+                                ? undefined
+                                : context.item
+                            addToDownloads(await expandItems(context.item, context.customContainer), containerItem)
                         }}
                         onMouseEnter={closeSubDropdown}
                     >
                         <span>Sync to cache</span>
-                    </div>
+                    </DropdownItem>
                 ) : (
-                    <div className="dropdown-item disabled" onMouseEnter={closeSubDropdown}>
+                    <DropdownItem className="disabled" onMouseEnter={closeSubDropdown} disabled>
                         <span>Syncing...</span>
-                    </div>
+                    </DropdownItem>
                 ),
         }
     }, [
         addItemsToPlaylist,
         addToDownloads,
         addToFavorites,
+        api,
         closeDropdown,
         closeSubDropdown,
         context,
@@ -709,8 +844,13 @@ const useInitialState = () => {
         handleInputKeyDown,
         handlePlayNext,
         handleRemoveFromQueue,
+        handleRenameClick,
+        handleRenameInputChange,
+        handleRenameInputKeyDown,
         handleViewAlbum,
         handleViewArtist,
+        isCreatingPlaylist,
+        isRenamingPlaylist,
         isTouchDevice,
         navigate,
         openSubDropdown,
@@ -719,6 +859,7 @@ const useInitialState = () => {
         removeFromDownloads,
         removeFromFavorites,
         removeFromPlaylist,
+        renamePlaylistName,
         subDropdown.flipX,
         subDropdown.flipY,
         subDropdown.isOpen,
@@ -734,21 +875,20 @@ const useInitialState = () => {
 
             if (subDropdown.type === 'view-artists') {
                 items =
-                    context?.item?.ArtistItems?.map(artist => (
-                        <div
+                    context?.item.ArtistItems?.map(artist => (
+                        <DropdownItem
                             key={artist.Id}
-                            className="dropdown-item"
                             onClick={() => {
                                 handleViewArtist(artist.Id)
                                 // handleViewArtist already calls closeDropdown
                             }}
                         >
                             {artist.Name || 'Unknown Artist'}
-                        </div>
+                        </DropdownItem>
                     )) || []
             } else if (subDropdown.type === 'add-playlist') {
                 items = [
-                    <div key="playlist-input-item" className="dropdown-item">
+                    <DropdownItem key="playlist-input-item">
                         <div className="playlist-input-container">
                             <input
                                 value={playlistName}
@@ -757,30 +897,59 @@ const useInitialState = () => {
                                 onClick={e => e.stopPropagation()}
                                 placeholder="New..."
                                 className={`playlist-input${playlistName.trim() ? ' has-text' : ''}`}
+                                disabled={isCreatingPlaylist}
                             />
-                            <button className="create-btn" onClick={handleCreateClick}>
-                                {' '}
-                                {/* Calls closeDropdown */}
-                                Create
-                            </button>
+
+                            {isCreatingPlaylist && <InlineLoader />}
+
+                            {!isCreatingPlaylist && (
+                                <button className="create-btn" onClick={handleCreateClick}>
+                                    Create
+                                </button>
+                            )}
                         </div>
-                    </div>,
+                    </DropdownItem>,
                     ...(playlists.length > 0 ? [<div key="playlist-separator" className="dropdown-separator" />] : []),
                     ...playlists.map(playlist => (
-                        <div
+                        <DropdownItem
                             key={playlist.Id}
-                            className="dropdown-item"
                             onClick={async () => {
-                                closeDropdown()
+                                if (!context) return
 
-                                if (context) {
-                                    await addToPlaylist(context.item, playlist.Id)
-                                }
+                                closeDropdown()
+                                await addItemsToPlaylist(
+                                    await expandItems(context.item, context.customContainer),
+                                    playlist.Id
+                                )
                             }}
                         >
                             {playlist.Name}
-                        </div>
+                        </DropdownItem>
                     )),
+                ]
+            } else if (subDropdown.type === 'rename-playlist') {
+                items = [
+                    <DropdownItem key="rename-playlist-input-item">
+                        <div className="playlist-input-container">
+                            <input
+                                value={renamePlaylistName}
+                                onChange={handleRenameInputChange}
+                                onKeyDown={handleRenameInputKeyDown} // Calls closeDropdown on Enter
+                                onClick={e => e.stopPropagation()}
+                                placeholder="Rename playlist..."
+                                className={`playlist-input${renamePlaylistName.trim() ? ' has-text' : ''}`}
+                                disabled={isRenamingPlaylist}
+                            />
+
+                            {isRenamingPlaylist && <InlineLoader />}
+
+                            {!isRenamingPlaylist && (
+                                <button className="create-btn" onClick={handleRenameClick}>
+                                    Rename
+                                </button>
+                            )}
+                        </div>
+                    </DropdownItem>,
                 ]
             }
             return items
@@ -794,7 +963,9 @@ const useInitialState = () => {
                             !hidden?.next &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.next,
                     },
                     {
@@ -802,7 +973,9 @@ const useInitialState = () => {
                             !hidden?.add_to_queue &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.add_to_queue,
                     },
                     {
@@ -811,7 +984,9 @@ const useInitialState = () => {
                             !hidden?.remove_from_queue &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.remove_from_queue,
                     },
                     {
@@ -821,11 +996,11 @@ const useInitialState = () => {
                 ],
                 [
                     {
-                        isVisible: !hidden?.view_artists && (context?.item?.ArtistItems?.length || 0) > 1,
+                        isVisible: !hidden?.view_artists && (context?.item.ArtistItems?.length || 0) > 1,
                         node: menuItems.view_artists,
                     },
                     {
-                        isVisible: !hidden?.view_artist && context?.item?.ArtistItems?.length === 1,
+                        isVisible: !hidden?.view_artist && context?.item.ArtistItems?.length === 1,
                         node: menuItems.view_artist,
                     },
                     {
@@ -839,7 +1014,7 @@ const useInitialState = () => {
                 ],
                 [
                     {
-                        isVisible: !hidden?.add_to_favorite && !context?.item?.UserData?.IsFavorite,
+                        isVisible: !hidden?.add_to_favorite && !context?.item.UserData?.IsFavorite,
                         node: menuItems.add_to_favorite,
                     },
                     {
@@ -855,8 +1030,14 @@ const useInitialState = () => {
                             !hidden?.add_to_playlist &&
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
-                                context?.item.Type === BaseItemKind.MusicArtist),
+                                context?.item.Type === BaseItemKind.MusicArtist ||
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                context?.customContainer === 'favorites'),
                         node: menuItems.add_to_playlist,
+                    },
+                    {
+                        isVisible: !hidden?.rename_playlist && context?.item.Type === BaseItemKind.Playlist,
+                        node: menuItems.rename_playlist,
                     },
                     {
                         isVisible: !hidden?.delete_playlist && context?.item.Type === BaseItemKind.Playlist,
@@ -870,7 +1051,9 @@ const useInitialState = () => {
                             (context?.item.Type === BaseItemKind.Audio ||
                                 context?.item.Type === BaseItemKind.MusicAlbum ||
                                 context?.item.Type === BaseItemKind.MusicArtist ||
-                                context?.item.Type === BaseItemKind.Playlist),
+                                context?.item.Type === BaseItemKind.Playlist ||
+                                context?.item.Type === BaseItemKind.MusicGenre ||
+                                !!context?.customContainer),
                         node: menuItems.download_song,
                     },
                 ],
@@ -899,7 +1082,7 @@ const useInitialState = () => {
                 ref={menuRef}
             >
                 <div className="dropdown-menu">
-                    {isTouchDevice && context?.item && (
+                    {isTouchDevice && context && (
                         <div className="dropdown-header">
                             <div
                                 className={`container ${
@@ -911,6 +1094,8 @@ const useInitialState = () => {
                                         ? 'artist'
                                         : context.item.Type === BaseItemKind.Playlist
                                         ? 'playlist'
+                                        : context.item.Type === BaseItemKind.MusicGenre
+                                        ? 'genre'
                                         : 'unknown'
                                 }`}
                             >
@@ -922,8 +1107,25 @@ const useInitialState = () => {
                                     useSquircle={context.item.Type !== BaseItemKind.MusicArtist}
                                 >
                                     {context.item && (
-                                        <JellyImg item={context.item} type={'Primary'} width={36} height={36} />
+                                        <>
+                                            {context.item.Id === 'JMA_CUSTOM_FAVORITES' && (
+                                                <div className="art">
+                                                    <HeartFillIcon size={16} />
+                                                </div>
+                                            )}
+
+                                            {context.item.Id !== 'JMA_CUSTOM_FAVORITES' && (
+                                                <JellyImg
+                                                    data-fav={context.item.Id}
+                                                    item={context.item}
+                                                    type={'Primary'}
+                                                    width={36}
+                                                    height={36}
+                                                />
+                                            )}
+                                        </>
                                     )}
+
                                     {!context.item && (
                                         <div className="fallback-thumbnail">
                                             <TracksIcon width="50%" height="50%" />
@@ -941,19 +1143,21 @@ const useInitialState = () => {
                                             </span>
                                         )}
                                     </div>
-                                    {context.item.Type !== BaseItemKind.MusicArtist && (
-                                        <div className="desc">
-                                            {context.item.Type === BaseItemKind.Audio
-                                                ? context.item.Artists?.join(', ') || 'Unknown Artist'
-                                                : context.item.Type === BaseItemKind.MusicAlbum
-                                                ? context.item.AlbumArtist || 'Unknown Artist'
-                                                : context.item.Type === BaseItemKind.Playlist
-                                                ? `${context.item.ChildCount || 0} Track${
-                                                      context.item.ChildCount === 1 ? '' : 's'
-                                                  }`
-                                                : 'Unknown'}
-                                        </div>
-                                    )}
+                                    {context.item.Type !== BaseItemKind.MusicArtist &&
+                                        context.item.Type !== BaseItemKind.MusicGenre &&
+                                        context.item.Id !== 'JMA_CUSTOM_FAVORITES' && (
+                                            <div className="desc">
+                                                {context.item.Type === BaseItemKind.Audio
+                                                    ? context.item.Artists?.join(', ') || 'Unknown Artist'
+                                                    : context.item.Type === BaseItemKind.MusicAlbum
+                                                    ? context.item.AlbumArtist || 'Unknown Artist'
+                                                    : context.item.Type === BaseItemKind.Playlist
+                                                    ? `${context.item.ChildCount || 0} Track${
+                                                          context.item.ChildCount === 1 ? '' : 's'
+                                                      }`
+                                                    : 'Unknown'}
+                                            </div>
+                                        )}
                                 </div>
                             </div>
                             <div className="actions">
@@ -980,13 +1184,17 @@ const useInitialState = () => {
             </div>
         )
     }, [
-        addToPlaylist,
+        addItemsToPlaylist,
         closeDropdown,
         closeSubDropdown,
         context,
+        expandItems,
         handleCreateClick,
         handleInputChange,
         handleInputKeyDown,
+        handleRenameClick,
+        handleRenameInputChange,
+        handleRenameInputKeyDown,
         handleViewArtist,
         hidden?.add_to_favorite,
         hidden?.add_to_playlist,
@@ -998,10 +1206,13 @@ const useInitialState = () => {
         hidden?.remove_from_favorite,
         hidden?.remove_from_playlist,
         hidden?.remove_from_queue,
+        hidden?.rename_playlist,
         hidden?.view_album,
         hidden?.view_artist,
         hidden?.view_artists,
+        isCreatingPlaylist,
         isOpen,
+        isRenamingPlaylist,
         isTouchDevice,
         menuItems.add_to_favorite,
         menuItems.add_to_playlist,
@@ -1013,6 +1224,7 @@ const useInitialState = () => {
         menuItems.remove_from_favorite,
         menuItems.remove_from_playlist,
         menuItems.remove_from_queue,
+        menuItems.rename_playlist,
         menuItems.view_album,
         menuItems.view_artist,
         menuItems.view_artists,
@@ -1020,6 +1232,7 @@ const useInitialState = () => {
         playlists,
         position.x,
         position.y,
+        renamePlaylistName,
         subDropdown.isOpen,
         subDropdown.type,
     ])

@@ -4,7 +4,7 @@ import { MediaList } from '../components/MediaList'
 import { useJellyfinHomeData } from '../hooks/Jellyfin/useJellyfinHomeData'
 
 export const Home = () => {
-    const { recentlyPlayed, frequentlyPlayed, recentlyAdded, isLoading, error } = useJellyfinHomeData()
+    const { recentlyPlayed, frequentlyPlayed, recentlyAdded, recentGenres, isLoading, error } = useJellyfinHomeData()
 
     if (isLoading) {
         return <Loader />
@@ -65,6 +65,28 @@ export const Home = () => {
                     isLoading={isLoading}
                     type="album"
                     title={'Home - Recently Added'}
+                />
+            </div>
+            <div className="section">
+                <div className="section-header">
+                    <div className="container">
+                        <div className="section_title">Explore Genres</div>
+                        <div className="section_desc">New genres from recently added media</div>
+                    </div>
+                    <Link to="/genres" className="see-more noSelect">
+                        See more
+                    </Link>
+                </div>
+                <MediaList
+                    items={recentGenres}
+                    infiniteData={{ pageParams: [1], pages: [recentGenres || []] }}
+                    isLoading={isLoading}
+                    type="genre"
+                    title={'Home - Recent Genres'}
+                    hidden={{
+                        add_to_favorite: true,
+                        remove_from_favorite: true,
+                    }}
                 />
             </div>
         </div>

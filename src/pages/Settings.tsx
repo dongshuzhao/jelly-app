@@ -66,8 +66,8 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
     }, [api])
 
     const handleLogout = () => {
-        playback.audioRef.current.pause()
-        playback.crossfadeRef.current.pause()
+        playback.audioRef.pause()
+        playback.crossfadeRef.pause()
         resetSessionCount()
         onLogout()
         navigate('/login')
@@ -92,31 +92,71 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
         }
     }, [audioStorage, clearQueue, queryClient, refreshStorageStats])
 
+    const reloadApp = async () => {
+        queryClient.clear()
+        await persister.removeClient()
+
+        if (navigator.onLine) {
+            await Promise.all(((await navigator.serviceWorker?.getRegistrations()) || []).map(r => r.unregister()))
+            await Promise.all(((await window.caches?.keys()) || []).map(c => window.caches.delete(c)))
+        }
+
+        window.location.reload()
+    }
+
     return (
         <div className="settings-page">
             <div className="section appearance">
                 <div className="title">Appearance</div>
-                <div className="options noSelect">
-                    <div
-                        className={`option light ${theme === 'light' ? 'active' : ''}`}
-                        onClick={() => toggleTheme('light')}
-                    >
-                        <div className="visual" />
-                        <div className="desc">Light</div>
+                <div className="container">
+                    <div className="options primary noSelect">
+                        <div
+                            className={`option light ${theme === 'light' ? 'active' : ''}`}
+                            onClick={() => toggleTheme('light')}
+                        >
+                            <div className="visual" />
+                            <div className="desc">Light</div>
+                        </div>
+                        <div
+                            className={`option dark ${theme === 'dark' ? 'active' : ''}`}
+                            onClick={() => toggleTheme('dark')}
+                        >
+                            <div className="visual" />
+                            <div className="desc">Dark</div>
+                        </div>
+                        <div
+                            className={`option system ${theme === 'system' ? 'active' : ''}`}
+                            onClick={() => toggleTheme('system')}
+                        >
+                            <div className="visual" />
+                            <div className="desc">System</div>
+                        </div>
                     </div>
-                    <div
-                        className={`option dark ${theme === 'dark' ? 'active' : ''}`}
-                        onClick={() => toggleTheme('dark')}
-                    >
-                        <div className="visual" />
-                        <div className="desc">Dark</div>
-                    </div>
-                    <div
-                        className={`option system ${theme === 'system' ? 'active' : ''}`}
-                        onClick={() => toggleTheme('system')}
-                    >
-                        <div className="visual" />
-                        <div className="desc">System</div>
+                    <div className="options secondary noSelect">
+                        <div
+                            className={`option classic ${playback.maxWidth === '800' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('800')}
+                        >
+                            <div className="desc">Classic</div>
+                        </div>
+                        <div
+                            className={`option medium ${playback.maxWidth === '1000' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('1000')}
+                        >
+                            <div className="desc">Medium</div>
+                        </div>
+                        <div
+                            className={`option large ${playback.maxWidth === '1400' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('1400')}
+                        >
+                            <div className="desc">Large</div>
+                        </div>
+                        <div
+                            className={`option wide ${playback.maxWidth === 'wide' ? 'active' : ''}`}
+                            onClick={() => playback.setMaxWidth('wide')}
+                        >
+                            <div className="desc">Wide</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -212,7 +252,7 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                     <div className="container">
                         <div className="title">Offline Sync</div>
                         <div className="desc">
-                            Synced Music - <span className="number">{storageStats.trackCount}</span> Track
+                            Synced - <span className="number">{storageStats.trackCount}</span> Track
                             {storageStats.trackCount === 1 ? '' : 's'}
                             {queueCount > 0 ? (
                                 <>
@@ -248,6 +288,47 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                             Browse music library
                         </Link>
                         , available once tracks are synced
+                    </div>
+                </div>
+            </div>
+            <div className={'section preload' + (playback.isPreloadActive ? '' : ' disabled')}>
+                <div className="primary">
+                    <div className="container">
+                        <div className="title">Preload</div>
+                    </div>
+                    <div className="options noSelect">
+                        <div className="option adjustable">
+                            <div className="number current">{playback.preloadDuration}s</div>
+                            <div className="slider">
+                                <input
+                                    type="range"
+                                    id="preload"
+                                    name="preload"
+                                    min="2"
+                                    max="30"
+                                    step="1"
+                                    value={playback.preloadDuration}
+                                    onChange={e => playback.setPreloadDuration(Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="number">30s</div>
+                        </div>
+                        <div className="option">
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={playback.isPreloadActive}
+                                    onChange={e => playback.setIsPreloadActive(e.target.checked)}
+                                ></input>
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div className="desc">
+                    <div className="info">
+                        Preload the next track to ensure seamless playback, eliminating buffering delays for a smoother,
+                        uninterrupted listening experience, even with high-quality audio or slower connections
                     </div>
                 </div>
             </div>
@@ -292,44 +373,7 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                     </div>
                 </div>
             </div>
-            <div className="section lyrics">
-                <div className="title">Lyrics</div>
-                <div className="inner row">
-                    <div className="container">
-                        <div className="desc">
-                            <div className="subtitle">Timestamps</div>
-                            <div className="subdesc">Show timestamps with the synchronized lyrics</div>
-                        </div>
-                        <label className="switch">
-                            <input
-                                type="checkbox"
-                                checked={playback.lyricsTimestamps}
-                                onChange={e => playback.setLyricsTimestamps(e.target.checked)}
-                            ></input>
-                            <span className="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div className="inner row">
-                    <div className="container">
-                        <div className="desc">
-                            <div className="subtitle">Alignment</div>
-                            <div className="subdesc">
-                                Center lyrics for a different look, overriding the default left alignment
-                            </div>
-                        </div>
-                        <label className="switch">
-                            <input
-                                type="checkbox"
-                                checked={playback.centeredLyrics}
-                                onChange={e => playback.setCenteredLyrics(e.target.checked)}
-                            ></input>
-                            <span className="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div className="section ui-settings">
+            <div className="section interface-ui">
                 <div className="title">Interface</div>
                 <div className="inner row">
                     <div className="container">
@@ -362,6 +406,43 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                                 type="checkbox"
                                 checked={playback.warnBeforeOverwriteQueue}
                                 onChange={e => playback.setWarnBeforeOverwriteQueue(e.target.checked)}
+                            ></input>
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div className="section lyrics">
+                <div className="title">Lyrics</div>
+                <div className="inner row">
+                    <div className="container">
+                        <div className="desc">
+                            <div className="subtitle">Timestamps</div>
+                            <div className="subdesc">Show timestamps with the synchronized lyrics</div>
+                        </div>
+                        <label className="switch">
+                            <input
+                                type="checkbox"
+                                checked={playback.lyricsTimestamps}
+                                onChange={e => playback.setLyricsTimestamps(e.target.checked)}
+                            ></input>
+                            <span className="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div className="inner row">
+                    <div className="container">
+                        <div className="desc">
+                            <div className="subtitle">Alignment</div>
+                            <div className="subdesc">
+                                Center lyrics for a different look, overriding the default left alignment
+                            </div>
+                        </div>
+                        <label className="switch">
+                            <input
+                                type="checkbox"
+                                checked={playback.centeredLyrics}
+                                onChange={e => playback.setCenteredLyrics(e.target.checked)}
                             ></input>
                             <span className="slider"></span>
                         </label>
@@ -425,11 +506,7 @@ export const Settings = ({ onLogout }: { onLogout: () => void }) => {
                     </button>
 
                     <button
-                        onClick={async () => {
-                            queryClient.clear()
-                            await persister.removeClient()
-                            window.location.reload()
-                        }}
+                        onClick={reloadApp}
                         className="btn reload"
                         title="Reloading can help with issues like outdated cache or version conflicts."
                     >

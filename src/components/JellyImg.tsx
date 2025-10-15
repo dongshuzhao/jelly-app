@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MediaItem } from '../api/jellyfin'
 import { useJellyfinContext } from '../context/JellyfinContext/JellyfinContext'
 import { TracksIcon } from './SvgIcons'
@@ -22,6 +22,10 @@ export const JellyImg = ({
     const onlineImageUrl = api.getImageUrl(item, type, { width, height })
 
     const src = item.downloadedImageUrl || onlineImageUrl
+
+    useEffect(() => {
+        setError(false)
+    }, [src])
 
     return (
         <>

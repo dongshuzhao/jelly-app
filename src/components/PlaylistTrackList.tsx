@@ -2,7 +2,6 @@ import { HeartFillIcon } from '@primer/octicons-react'
 import { InfiniteData } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Virtuoso } from 'react-virtuoso'
 import { MediaItem } from '../api/jellyfin'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
@@ -10,11 +9,13 @@ import { useDisplayItems } from '../hooks/useDisplayItems'
 import { formatDuration } from '../utils/formatDuration'
 import { JellyImg } from './JellyImg'
 import { Loader } from './Loader'
+import { DownloadIndicators } from './MediaList'
 import { IReviver } from './PlaybackManager'
 import './PlaylistTrackList.css'
 import { Skeleton } from './Skeleton'
 import { Squircle } from './Squircle'
-import { DeletingIcon, DownloadedIcon, DownloadingIcon, PlaystateAnimationTracklist } from './SvgIcons'
+import { PlaystateAnimationTracklist } from './SvgIcons'
+import { VirtuosoWindow } from './VirtuosoWindow'
 
 export const PlaylistTrackList = ({
     tracks,
@@ -56,8 +57,8 @@ export const PlaylistTrackList = ({
         [playback, infiniteData, title, disableUrl, reviver]
     )
 
-    const renderTrack = (index: number, item: MediaItem | { isPlaceholder: true }) => {
-        if ('isPlaceholder' in item) {
+    const renderTrack = (index: number, item: MediaItem | { isPlaceholder: true } | undefined) => {
+        if (!item || 'isPlaceholder' in item) {
             return (
                 <li className="track-item" ref={el => setRowRefs(index, el)}>
                     <Skeleton type="playlist" />
@@ -133,32 +134,14 @@ export const PlaylistTrackList = ({
                     </div>
                 </div>
                 <div className="track-indicators">
-                    {track.offlineState && (
-                        <div className="download-state">
-                            {track.offlineState === 'downloading' && (
-                                <div className="icon downloading" title="Syncing...">
-                                    <DownloadingIcon width={12} height={12} />
-                                </div>
-                            )}
+                    <DownloadIndicators offlineState={track.offlineState} size={12} itemId={track.Id} />
 
-                            {track.offlineState === 'downloaded' && (
-                                <div className="icon downloaded" title="Synced">
-                                    <DownloadedIcon width={12} height={12} />
-                                </div>
-                            )}
-
-                            {track.offlineState === 'deleting' && (
-                                <div className="icon deleting" title="Unsyncing...">
-                                    <DeletingIcon width={12} height={12} />
-                                </div>
-                            )}
-                        </div>
-                    )}
                     {isFavorite && (
                         <div className="favorited" title="Favorited">
                             <HeartFillIcon size={12} />
                         </div>
                     )}
+
                     <div className="track-duration">{formatDuration(track.RunTimeTicks || 0)}</div>
                 </div>
             </li>
@@ -175,10 +158,9 @@ export const PlaylistTrackList = ({
 
     return (
         <ul className="playlist-tracklist noSelect">
-            <Virtuoso
+            <VirtuosoWindow
                 key={playlistId}
                 data={displayItems}
-                useWindowScroll
                 itemContent={renderTrack}
                 endReached={loadMore}
                 overscan={800}

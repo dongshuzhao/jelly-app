@@ -37,6 +37,12 @@
     border-radius: 20px;
 }
 
+.media-list .media-item.genre-item > .media-state {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+}
+
 .media-list .media-item > .media-state > .thumbnail {
     display: block;
     width: 46px;
@@ -50,6 +56,12 @@
     width: 36px;
     height: 36px;
     border-radius: 20px;
+}
+
+.media-list .media-item.genre-item > .media-state > .thumbnail {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
 }
 
 .media-list .media-item > .media-state > .fallback-thumbnail {
@@ -66,6 +78,12 @@
     width: 36px;
     height: 36px;
     border-radius: 20px;
+}
+
+.media-list .media-item.genre-item > .media-state > .fallback-thumbnail {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
 }
 
 .media-list .media-item > .media-state > .fallback-thumbnail > svg {
@@ -272,6 +290,10 @@
     margin-bottom: 0;
 }
 
+.media-list .media-item.genre-item > .media-details > .song-name {
+    margin-bottom: 0;
+}
+
 .media-list .media-item.playing > .media-details > .song-name,
 .media-list .media-item.paused > .media-details > .song-name {
     color: var(--font-color-active);
@@ -364,6 +386,23 @@
 .media-list .media-item.playing > .media-indicators > .download-state > .icon,
 .media-list .media-item.paused > .media-indicators > .download-state > .icon {
     fill: var(--font-color-secondary);
+}
+
+.media-list .media-item > .media-indicators > .download-state > .icon.downloading.active-sync > svg path:last-child {
+    clip-path: inset(100% 0 0 0);
+    animation: syncColorSweepML 1.6s linear infinite;
+}
+
+@keyframes syncColorSweepML {
+    0% {
+        clip-path: inset(0 0 100% 0);
+    }
+    50% {
+        clip-path: inset(0% 0 0 0);
+    }
+    100% {
+        clip-path: inset(100% 0 0 0);
+    }
 }
 
 .media-list .media-item > .media-indicators > .favorited {

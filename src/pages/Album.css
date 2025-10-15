@@ -150,7 +150,42 @@
     color: var(--brand-color);
 }
 
-.album-page > .album-header > .album-details > .actions > .more {
+.album-page > .album-header > .album-details > .actions > .secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.album-page > .album-header > .album-details > .actions > .secondary > .download-state {
+    fill: var(--font-color-tertiary);
+}
+
+.album-page
+    > .album-header
+    > .album-details
+    > .actions
+    > .secondary
+    > .download-state
+    > .icon.downloading.active-sync
+    > svg
+    path:last-child {
+    clip-path: inset(100% 0 0 0);
+    animation: syncColorSweepAlbum 1.6s linear infinite;
+}
+
+@keyframes syncColorSweepAlbum {
+    0% {
+        clip-path: inset(0 0 100% 0);
+    }
+    50% {
+        clip-path: inset(0% 0 0 0);
+    }
+    100% {
+        clip-path: inset(100% 0 0 0);
+    }
+}
+
+.album-page > .album-header > .album-details > .actions > .secondary > .more {
     cursor: pointer;
     padding: 7px;
     border-radius: 20px;
@@ -158,15 +193,15 @@
     transition: background-color 0.2s ease-out;
 }
 
-.album-page > .album-header > .album-details > .actions > .more:hover {
+.album-page > .album-header > .album-details > .actions > .secondary > .more:hover {
     background-color: var(--bg-color-tertiary);
 }
 
-.album-page > .album-header > .album-details > .actions > .more.active {
+.album-page > .album-header > .album-details > .actions > .secondary > .more.active {
     background-color: var(--bg-color-tertiary);
 }
 
-.album-page > .album-header > .album-details > .actions > .more > svg {
+.album-page > .album-header > .album-details > .actions > .secondary > .more > svg {
     fill: var(--brand-color);
 }
 

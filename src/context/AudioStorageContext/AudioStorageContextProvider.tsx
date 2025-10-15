@@ -277,6 +277,61 @@ const useInitialState = () => {
         })
     }
 
+    const searchOfflineItems = async (searchTerm: string, limit = 50): Promise<MediaItem[]> => {
+        if (!dbRef.current) throw new Error('Database not initialized')
+        if (!searchTerm.trim()) return []
+
+        const db = await dbRef.current
+        const tx = db.transaction(STORE_NAME, 'readonly')
+        const store = tx.objectStore(STORE_NAME)
+        const index = store.index('by_kind')
+        const keyRange = IDBKeyRange.only(BaseItemKind.Audio)
+
+        return new Promise<MediaItem[]>((resolve, reject) => {
+            const items: MediaItem[] = []
+            const searchTermLower = searchTerm.toLowerCase()
+
+            const cursorRequest = index.openCursor(keyRange)
+            cursorRequest.onerror = () => {
+                reject(cursorRequest.error)
+            }
+            cursorRequest.onsuccess = event => {
+                const cursor: IDBCursorWithValue | null = (event.target as IDBRequest).result
+                if (!cursor) {
+                    // No more matching entries
+                    resolve(items)
+                    return
+                }
+
+                const record = cursor.value as Partial<IStorageTrack>
+
+                // Legacy did not have `mediaItem` field, so we check if it exists
+                if (record.mediaItem && record.mediaItem.Name) {
+                    const itemName = record.mediaItem.Name.toLowerCase()
+
+                    // Check if the search term matches the song name
+                    if (itemName.includes(searchTermLower)) {
+                        if (record.type === 'song' && record.mediaSources) {
+                            record.mediaItem.MediaSources = record.mediaSources
+                        }
+
+                        if (record.thumbnail) {
+                            record.mediaItem.downloadedImageUrl = URL.createObjectURL(record.thumbnail)
+                        }
+
+                        items.push(record.mediaItem)
+                    }
+                }
+
+                if (items.length < limit) {
+                    cursor.continue()
+                } else {
+                    resolve(items)
+                }
+            }
+        })
+    }
+
     const audioStorage = {
         saveTrack,
         removeTrack,
@@ -286,6 +341,7 @@ const useInitialState = () => {
         getTrackCount,
         clearAllDownloads,
         getPageFromIndexedDb,
+        searchOfflineItems,
         isInitialized: () => isInitialized.current,
     }
 

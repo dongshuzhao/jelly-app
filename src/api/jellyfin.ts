@@ -1,7 +1,12 @@
 import { Jellyfin } from '@jellyfin/sdk'
-import { InstantMixApi, LyricsApi, MediaInfoApi, PlaylistsApi } from '@jellyfin/sdk/lib/generated-client'
+import {
+    InstantMixApi,
+    LyricsApi,
+    MediaInfoApi,
+    MusicGenresApi,
+    PlaylistsApi,
+} from '@jellyfin/sdk/lib/generated-client'
 import { ArtistsApi } from '@jellyfin/sdk/lib/generated-client/api/artists-api'
-import { GenresApi } from '@jellyfin/sdk/lib/generated-client/api/genres-api'
 import { ItemsApi } from '@jellyfin/sdk/lib/generated-client/api/items-api'
 import { PlaystateApi } from '@jellyfin/sdk/lib/generated-client/api/playstate-api'
 import { SessionApi } from '@jellyfin/sdk/lib/generated-client/api/session-api'
@@ -74,9 +79,9 @@ export const loginToJellyfin = async (serverUrl: string, username: string, passw
     }
 }
 
-export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: string; userId: string; token: string }) => {
-    const maxLimit = 2000 // Safety fallback upper limit for API calls
+export const JELLYFIN_MAX_LIMIT = 2000 // Safety fallback upper limit for API calls
 
+export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: string; userId: string; token: string }) => {
     const jellyfin = new Jellyfin({
         clientInfo: {
             name: 'Jelly Music App',
@@ -90,17 +95,28 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
 
     const parseItemDto = async (item: BaseItemDto) => {
         const isDownloaded = item.Id ? await window.audioStorage.hasTrack(item.Id) : false
+        const downloadState = item.Id ? window.getDownloadState(item.Id) : undefined
 
         return {
             ...item,
             Id: item.Id || '',
             Name: item.Name || '',
-            offlineState: isDownloaded ? 'downloaded' : undefined,
+            offlineState: downloadState || (isDownloaded ? 'downloaded' : undefined),
         } as MediaItem
     }
 
     const parseItemDtos = async (items: BaseItemDto[] | undefined) => {
         return (await Promise.all((items || []).map(parseItemDto))) as MediaItem[]
+    }
+
+    // Helper function to create fake MediaItem for custom containers
+    const createCustomContainerMediaItem = async (customContainer: string, customContainerTitle?: string) => {
+        const id = `JMA_CUSTOM_${customContainer.toUpperCase()}`
+
+        return await parseItemDto({
+            Id: id,
+            Name: customContainerTitle || id,
+        })
     }
 
     const api = jellyfin.createApi(serverUrl, token)
@@ -113,7 +129,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 searchTerm,
                 includeItemTypes: [BaseItemKind.MusicAlbum, BaseItemKind.Playlist, BaseItemKind.Audio],
                 recursive: true,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -126,7 +142,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
             {
                 userId,
                 searchTerm,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -141,7 +157,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 searchTerm,
                 includeItemTypes: [BaseItemKind.MusicAlbum],
                 recursive: true,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -156,7 +172,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 searchTerm,
                 includeItemTypes: [BaseItemKind.Playlist],
                 recursive: true,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -164,13 +180,13 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
     }
 
     const searchGenres = async (searchTerm: string, limit = 20) => {
-        const genresApi = new GenresApi(api.configuration)
-        const response = await genresApi.getGenres(
+        const genresApi = new MusicGenresApi(api.configuration)
+        const response = await genresApi.getMusicGenres(
             {
                 userId,
                 searchTerm,
                 includeItemTypes: [BaseItemKind.Audio],
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -186,7 +202,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortOrder: [SortOrder.Descending],
                 includeItemTypes: [BaseItemKind.Audio],
                 recursive: true,
-                limit: Math.min(12, maxLimit),
+                limit: Math.min(12, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -202,7 +218,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortOrder: [SortOrder.Descending],
                 includeItemTypes: [BaseItemKind.Audio],
                 recursive: true,
-                limit: Math.min(12, maxLimit),
+                limit: Math.min(12, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -218,7 +234,22 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortOrder: [SortOrder.Descending],
                 includeItemTypes: [BaseItemKind.MusicAlbum],
                 recursive: true,
-                limit: Math.min(12, maxLimit),
+                limit: Math.min(12, JELLYFIN_MAX_LIMIT),
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
+        return await parseItemDtos(response.data.Items)
+    }
+
+    const getRecentGenres = async () => {
+        const genresApi = new MusicGenresApi(api.configuration)
+        const response = await genresApi.getMusicGenres(
+            {
+                userId,
+                sortBy: [ItemSortBy.DateCreated],
+                sortOrder: [SortOrder.Descending],
+                includeItemTypes: [BaseItemKind.Audio],
+                limit: Math.min(12, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -241,7 +272,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 filters: [ItemFilter.IsPlayed],
                 recursive: true,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -264,7 +295,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 filters: [ItemFilter.IsPlayed],
                 recursive: true,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -286,7 +317,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 includeItemTypes: [BaseItemKind.MusicAlbum],
                 recursive: true,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -306,7 +337,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortBy,
                 sortOrder,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -327,11 +358,32 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortBy,
                 sortOrder,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
 
+        return await parseItemDtos(response.data.Items)
+    }
+
+    const getAllGenres = async (
+        startIndex = 0,
+        limit = 40,
+        sortBy: ItemSortBy[] = [ItemSortBy.SortName],
+        sortOrder: SortOrder[] = [SortOrder.Ascending]
+    ) => {
+        const genresApi = new MusicGenresApi(api.configuration)
+        const response = await genresApi.getMusicGenres(
+            {
+                userId,
+                sortBy,
+                sortOrder,
+                includeItemTypes: [BaseItemKind.Audio],
+                startIndex,
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
         return await parseItemDtos(response.data.Items)
     }
 
@@ -350,7 +402,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 includeItemTypes: [BaseItemKind.Audio],
                 recursive: true,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -359,11 +411,11 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
 
     const getInstantMixFromSong = async (songId: string) => {
         const itemsApi = new InstantMixApi(api.configuration)
-        const response = await itemsApi.getInstantMixFromSong(
+        const response = await itemsApi.getInstantMixFromItem(
             {
                 userId,
                 itemId: songId,
-                limit: maxLimit,
+                limit: JELLYFIN_MAX_LIMIT,
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -384,7 +436,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                     userId,
                     isFavorite: true,
                     startIndex,
-                    limit: Math.min(limit, maxLimit),
+                    limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
                     sortBy,
                     sortOrder,
                 },
@@ -403,11 +455,16 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortBy,
                 sortOrder,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
-        return await parseItemDtos(response.data.Items)
+
+        const items = await parseItemDtos(response.data.Items)
+
+        syncDownloadsById('JMA_CUSTOM_FAVORITES', items)
+
+        return items
     }
 
     const getAlbumDetails = async (albumId: string) => {
@@ -429,7 +486,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                     includeItemTypes: [BaseItemKind.Audio],
                     sortBy: [ItemSortBy.IndexNumber],
                     sortOrder: [SortOrder.Ascending],
-                    limit: maxLimit,
+                    limit: JELLYFIN_MAX_LIMIT,
                 },
                 { signal: AbortSignal.timeout(20000) }
             ),
@@ -463,7 +520,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                     recursive: true,
                     sortBy: [ItemSortBy.PlayCount, ItemSortBy.SortName],
                     sortOrder: [SortOrder.Descending, SortOrder.Ascending],
-                    limit: Math.min(trackLimit, maxLimit),
+                    limit: Math.min(trackLimit, JELLYFIN_MAX_LIMIT),
                 },
                 { signal: AbortSignal.timeout(20000) }
             ),
@@ -499,7 +556,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                         artistIds: [artistId],
                         includeItemTypes: [BaseItemKind.Audio],
                         recursive: true,
-                        limit: maxLimit,
+                        limit: JELLYFIN_MAX_LIMIT,
                     },
                     { signal: AbortSignal.timeout(20000) }
                 ),
@@ -511,7 +568,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                         recursive: true,
                         sortBy: [ItemSortBy.PremiereDate, ItemSortBy.ProductionYear, ItemSortBy.SortName],
                         sortOrder: [SortOrder.Descending],
-                        limit: maxLimit,
+                        limit: JELLYFIN_MAX_LIMIT,
                     },
                     { signal: AbortSignal.timeout(20000) }
                 ),
@@ -523,7 +580,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                         recursive: true,
                         sortBy: [ItemSortBy.PremiereDate, ItemSortBy.ProductionYear, ItemSortBy.SortName],
                         sortOrder: [SortOrder.Descending],
-                        limit: maxLimit,
+                        limit: JELLYFIN_MAX_LIMIT,
                     },
                     { signal: AbortSignal.timeout(20000) }
                 ),
@@ -578,7 +635,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortOrder,
                 recursive: true,
                 startIndex,
-                limit: Math.min(limit, maxLimit),
+                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -595,7 +652,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 userId,
                 includeItemTypes: [BaseItemKind.Playlist],
                 recursive: true,
-                limit: maxLimit,
+                limit: JELLYFIN_MAX_LIMIT,
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -617,7 +674,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                                 parentId: playlist.Id,
                                 includeItemTypes: [BaseItemKind.Audio],
                                 startIndex,
-                                limit: Math.min(limit, maxLimit),
+                                limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
                             },
                             { signal: AbortSignal.timeout(20000) }
                         )
@@ -649,20 +706,28 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         sortOrder: SortOrder[] = [SortOrder.Descending]
     ) => {
         const itemsApi = new ItemsApi(api.configuration)
-        const response = await itemsApi.getItems(
-            {
-                userId,
-                sortBy,
-                sortOrder,
-                includeItemTypes: [BaseItemKind.Audio],
-                recursive: true,
-                genres: [genre],
-                startIndex,
-                limit: Math.min(limit, maxLimit),
-            },
-            { signal: AbortSignal.timeout(20000) }
-        )
-        return await parseItemDtos(response.data.Items)
+        const [genreResponse, genresResponse] = await Promise.all([
+            getGenreByName(genre),
+            itemsApi.getItems(
+                {
+                    userId,
+                    sortBy,
+                    sortOrder,
+                    includeItemTypes: [BaseItemKind.Audio],
+                    recursive: true,
+                    genres: [genre],
+                    startIndex,
+                    limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
+                },
+                { signal: AbortSignal.timeout(20000) }
+            ),
+        ])
+
+        const items = await parseItemDtos(genresResponse.data.Items)
+
+        syncDownloads(genreResponse, items)
+
+        return items
     }
 
     const getPlaylist = async (playlistId: string) => {
@@ -703,7 +768,85 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                     parentId: playlistId,
                     includeItemTypes: [BaseItemKind.Audio],
                     recursive: true,
-                    limit: maxLimit,
+                    limit: JELLYFIN_MAX_LIMIT,
+                },
+                { signal: AbortSignal.timeout(20000) }
+            )
+
+            const parsedItems = await parseItemDtos(fullResponse.data.Items)
+
+            totalPlaytime = parsedItems.reduce((sum, track) => sum + (track.RunTimeTicks || 0), 0)
+            totalPlays = parsedItems.reduce((sum, track) => sum + (track.UserData?.PlayCount || 0), 0)
+        }
+
+        return { totalTrackCount, totalPlaytime, totalPlays }
+    }
+
+    const getFavoritesTotals = async (itemKind: BaseItemKind = BaseItemKind.Audio) => {
+        const itemsApi = new ItemsApi(api.configuration)
+        const response = await itemsApi.getItems(
+            {
+                userId,
+                filters: [ItemFilter.IsFavorite],
+                includeItemTypes: [itemKind],
+                recursive: true,
+                limit: 0, // No items, just metadata
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
+        const totalTrackCount = response.data.TotalRecordCount || 0
+
+        // Fetch total playtime and plays (requires items for RunTimeTicks and PlayCount)
+        let totalPlaytime = 0
+        let totalPlays = 0
+
+        if (totalTrackCount > 0) {
+            const fullResponse = await itemsApi.getItems(
+                {
+                    userId,
+                    filters: [ItemFilter.IsFavorite],
+                    includeItemTypes: [itemKind],
+                    recursive: true,
+                    limit: JELLYFIN_MAX_LIMIT,
+                },
+                { signal: AbortSignal.timeout(20000) }
+            )
+
+            const parsedItems = await parseItemDtos(fullResponse.data.Items)
+
+            totalPlaytime = parsedItems.reduce((sum, track) => sum + (track.RunTimeTicks || 0), 0)
+            totalPlays = parsedItems.reduce((sum, track) => sum + (track.UserData?.PlayCount || 0), 0)
+        }
+
+        return { totalTrackCount, totalPlaytime, totalPlays }
+    }
+
+    const getGenreTotals = async (genre: string) => {
+        const itemsApi = new ItemsApi(api.configuration)
+        const response = await itemsApi.getItems(
+            {
+                userId,
+                includeItemTypes: [BaseItemKind.Audio],
+                recursive: true,
+                genres: [genre],
+                limit: 0, // No items, just metadata
+            },
+            { signal: AbortSignal.timeout(20000) }
+        )
+        const totalTrackCount = response.data.TotalRecordCount || 0
+
+        // Fetch total playtime (requires items for RunTimeTicks)
+        let totalPlaytime = 0
+        let totalPlays = 0
+
+        if (totalTrackCount > 0) {
+            const fullResponse = await itemsApi.getItems(
+                {
+                    userId,
+                    includeItemTypes: [BaseItemKind.Audio],
+                    recursive: true,
+                    genres: [genre],
+                    limit: JELLYFIN_MAX_LIMIT,
                 },
                 { signal: AbortSignal.timeout(20000) }
             )
@@ -728,7 +871,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 sortBy: [ItemSortBy.DateCreated],
                 sortOrder: [SortOrder.Descending],
                 recursive: true,
-                limit: maxLimit,
+                limit: JELLYFIN_MAX_LIMIT,
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -752,7 +895,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                           userId,
                           playlistId,
                           startIndex,
-                          limit: Math.min(limit, maxLimit),
+                          limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
                       },
                       { signal: AbortSignal.timeout(20000) }
                   )
@@ -764,7 +907,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                           sortBy,
                           sortOrder,
                           startIndex,
-                          limit: Math.min(limit, maxLimit),
+                          limit: Math.min(limit, JELLYFIN_MAX_LIMIT),
                       },
                       { signal: AbortSignal.timeout(20000) }
                   )
@@ -785,7 +928,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 userId,
                 includeItemTypes: [BaseItemKind.Playlist],
                 recursive: true,
-                limit: maxLimit,
+                limit: JELLYFIN_MAX_LIMIT,
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -809,7 +952,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
                 artistIds: [artistId],
                 includeItemTypes: [BaseItemKind.Audio],
                 recursive: true,
-                limit: maxLimit,
+                limit: JELLYFIN_MAX_LIMIT,
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -843,7 +986,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
             recursive: true,
             includeItemTypes: [BaseItemKind.Audio],
             filters: [ItemFilter.IsPlayed],
-            limit: maxLimit,
+            limit: JELLYFIN_MAX_LIMIT,
         })
         return response.data.TotalRecordCount || null
     }
@@ -855,7 +998,7 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
             searchTerm: query,
             includeItemTypes: [BaseItemKind.Audio],
             recursive: true,
-            limit: Math.min(10, maxLimit),
+            limit: Math.min(10, JELLYFIN_MAX_LIMIT),
         })
         return await parseItemDtos(response.data.Items)
     }
@@ -949,11 +1092,10 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
     const addToPlaylist = async (playlistId: string, itemIds: string[]) => {
         const playlistApi = new PlaylistsApi(api.configuration)
 
-        const response = await playlistApi.addItemToPlaylist(
+        const response = await playlistApi.updatePlaylist(
             {
-                userId,
                 playlistId,
-                ids: itemIds,
+                updatePlaylistDto: { Ids: itemIds },
             },
             { signal: AbortSignal.timeout(20000) }
         )
@@ -989,6 +1131,21 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
             },
             { signal: AbortSignal.timeout(20000) }
         )
+
+        return response.data
+    }
+
+    const renamePlaylist = async (playlistId: string, newName: string) => {
+        const playlistApi = new PlaylistsApi(api.configuration)
+
+        const response = await playlistApi.updatePlaylist({
+            playlistId,
+            // Seems to be bugged, need to pass both
+            updatePlaylistDto: {
+                Name: newName,
+                IsPublic: false,
+            },
+        })
 
         return response.data
     }
@@ -1037,6 +1194,34 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         return parseItemDto(response.data)
     }
 
+    const getGenreByName = async (genreName: string) => {
+        const genresApi = new MusicGenresApi(api.configuration)
+
+        try {
+            const response = await genresApi.getMusicGenre(
+                {
+                    userId,
+                    genreName,
+                },
+                { signal: AbortSignal.timeout(20000) }
+            )
+            if (response.data) {
+                return await parseItemDto(response.data)
+            }
+        } catch (error) {
+            console.error('Failed to get genre by name, trying search fallback:', error)
+        }
+
+        // Fallback to searchGenres
+        const genres = await searchGenres(genreName, 1)
+
+        if (genres.length > 0) {
+            return genres[0]
+        }
+
+        throw new Error(`Genre "${genreName}" not found`)
+    }
+
     return {
         loginToJellyfin,
         searchItems,
@@ -1050,14 +1235,17 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         getAllAlbums,
         getAllArtists,
         getAllAlbumArtists,
+        getAllGenres,
         getAllTracks,
         getFavoriteTracks,
+        getFavoritesTotals,
         getAlbumDetails,
         getArtistDetails,
         getArtistStats,
         getArtistTracks,
         getPlaylistsFeaturingArtist,
         getGenreTracks,
+        getGenreTotals,
         getPlaylist,
         getPlaylistTotals,
         getPlaylistAllTracks,
@@ -1083,8 +1271,12 @@ export const initJellyfinApi = ({ serverUrl, userId, token }: { serverUrl: strin
         addToPlaylist,
         removeFromPlaylist,
         createPlaylist,
+        renamePlaylist,
         deletePlaylist,
         getTrackInfo,
         getMediaItem,
+        createCustomContainerMediaItem,
+        getRecentGenres,
+        getGenreByName,
     }
 }

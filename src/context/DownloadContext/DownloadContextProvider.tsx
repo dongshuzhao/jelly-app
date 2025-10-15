@@ -1,5 +1,4 @@
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client'
-import { useQueryClient } from '@tanstack/react-query'
 import { Parser } from 'm3u8-parser'
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { MediaItem } from '../../api/jellyfin'
@@ -19,8 +18,7 @@ const useInitialState = () => {
     const api = useJellyfinContext()
     const playback = usePlaybackContext()
     const audioStorage = useAudioStorageContext()
-    const { patchMediaItem, patchMediaItems } = usePatchQueries()
-    const queryClient = useQueryClient()
+    const { patchMediaItem, patchMediaItems, prependItemsToQueryData, removeItemFromQueryData } = usePatchQueries()
     const [storageStats, setStorageStats] = useState({ usage: 0, indexedDB: 0, trackCount: 0 })
 
     const refreshStorageStats = useCallback(async () => {
@@ -213,14 +211,15 @@ const useInitialState = () => {
                             })
                         }
 
+                        prependItemsToQueryData(['downloads', mediaItem.Type || ''], [mediaItem])
                         patchMediaItem(mediaItem.Id, item => ({ ...item, offlineState: 'downloaded' }))
                     }
                 } else if (action === 'remove') {
                     await audioStorage.removeTrack(mediaItem.Id)
+                    removeItemFromQueryData(['downloads', mediaItem.Type || ''], mediaItem.Id)
                     patchMediaItem(mediaItem.Id, item => ({ ...item, offlineState: undefined }))
                 }
 
-                queryClient.invalidateQueries({ queryKey: ['downloads'] })
                 refreshStorageStats()
             } catch (error) {
                 console.error(`Task failed for ${action} id=${mediaItem.Id}`, error)
@@ -238,10 +237,48 @@ const useInitialState = () => {
         }
 
         runNext()
-    }, [api, audioStorage, refreshStorageStats, patchMediaItem, playback, queryClient, queue])
+    }, [
+        api,
+        audioStorage,
+        patchMediaItem,
+        playback.bitrate,
+        prependItemsToQueryData,
+        queue,
+        refreshStorageStats,
+        removeItemFromQueryData,
+    ])
 
     // We need the addToDownloads in jellyfin API but we don't want to cause unnecessary re-renders
     window.addToDownloads = addToDownloads
+
+    // Expose getDownloadState to check if an item is in the queue
+    window.getDownloadState = (itemId: string) => {
+        const task = queue.find(t => t.mediaItem.Id === itemId)
+        if (!task) return undefined
+        return task.action === 'download' ? 'downloading' : 'deleting'
+    }
+
+    const removeFromQueue = (itemId: string) => {
+        setQueue(prev => {
+            const task = prev.find(t => t.mediaItem.Id === itemId)
+            if (!task) return prev
+
+            const isFirstInQueue = prev[0]?.mediaItem.Id === itemId
+            if (isFirstInQueue && abortControllerRef.current) {
+                abortControllerRef.current.abort('removeFromQueue')
+                abortControllerRef.current = null
+                processingRef.current = false
+            }
+
+            if (task.action === 'download') {
+                patchMediaItem(itemId, item => ({ ...item, offlineState: undefined }))
+            } else if (task.action === 'remove') {
+                patchMediaItem(itemId, item => ({ ...item, offlineState: 'downloaded' }))
+            }
+
+            return prev.filter(t => t.mediaItem.Id !== itemId)
+        })
+    }
 
     return {
         addToDownloads,
@@ -250,6 +287,8 @@ const useInitialState = () => {
         refreshStorageStats,
         queueCount: queue.length,
         clearQueue,
+        queue,
+        removeFromQueue,
     }
 }
 

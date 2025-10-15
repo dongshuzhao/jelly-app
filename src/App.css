@@ -294,10 +294,11 @@ body.lockscroll {
     position: relative;
     display: flex;
     width: 100%;
-    max-width: 800px;
+    max-width: var(--interface-max-width, 800px);
     margin: 0 auto;
     border-left: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
+    transition: max-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Login/Portal Page */
@@ -656,15 +657,16 @@ body.lockscroll {
     z-index: 1;
     touch-action: none;
     display: flex;
-    height: 10px;
-    margin-top: -4px;
+    height: 12px;
+    margin-top: -5px;
     transform: scaleY(0.6);
-    transition: transform 0.1s linear;
+    transform-origin: bottom;
+    transition: transform 0.16s ease-out;
 }
 
 .main > .main_footer > .playback > .progress:hover,
 .main > .main_footer > .playback > .progress:active {
-    transform: scaleY(1);
+    transform: scaleY(1.2);
 }
 
 /* Progress loading */
@@ -759,8 +761,7 @@ body.lockscroll {
     display: flex;
     align-items: center;
     position: relative;
-    padding: 14px 20px;
-    padding-bottom: 18px;
+    padding: 16px 20px;
     /* Help with CJK letter spacing */
     max-height: 82px;
 }
@@ -1155,6 +1156,7 @@ body.lockscroll {
 .recently-page,
 .frequently-page,
 .genre-page,
+.genres-page,
 .artist-tracks-page,
 .artists-page,
 .lyrics-page {
@@ -1168,7 +1170,8 @@ body.lockscroll {
 .frequently-page > .empty,
 .genre-page > .empty,
 .playlist-page > .empty,
-.lyrics-page > .empty {
+.lyrics-page > .empty,
+.instant-mix-page > .empty {
     font-size: 0.85rem;
     margin: 4px 0;
 }
@@ -1222,7 +1225,12 @@ body.lockscroll {
     }
 
     .main > .main_footer > .playback > .progress {
-        height: 18px;
+        transform: scaleY(0.8);
+    }
+
+    .main > .main_footer > .playback > .progress:hover,
+    .main > .main_footer > .playback > .progress:active {
+        transform: scaleY(1.6);
     }
 
     .main > .main_footer > .playback > .container {

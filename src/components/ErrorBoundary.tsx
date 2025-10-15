@@ -34,6 +34,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
     reloadPage = async () => {
         queryClient.clear()
         await persister.removeClient()
+
+        if (navigator.onLine) {
+            await Promise.all(((await navigator.serviceWorker?.getRegistrations()) || []).map(r => r.unregister()))
+            await Promise.all(((await window.caches?.keys()) || []).map(c => window.caches.delete(c)))
+        }
+
         window.location.reload()
     }
 
