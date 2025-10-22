@@ -78,14 +78,20 @@ export const Sidenav = (props: { username: string }) => {
     useEffect(() => {
         const debounceTimer = setTimeout(() => {
             const params = new URLSearchParams(location.search)
+
             if (searchQuery) {
                 params.set('search', searchQuery)
             } else {
                 params.delete('search')
             }
+
             const newSearch = params.toString()
             const newUrl = newSearch ? `?${newSearch}` : location.pathname
-            navigate(newUrl, { replace: true })
+            const currentUrl = location.search || location.pathname
+
+            if (newUrl !== currentUrl) {
+                navigate(newUrl, { replace: true })
+            }
         }, 200)
 
         return () => clearTimeout(debounceTimer)
