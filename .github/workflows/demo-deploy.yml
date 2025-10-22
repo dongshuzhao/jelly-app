@@ -1,8 +1,10 @@
-name: Build and Deploy Demo on Release or Manual Run
+name: Build and Deploy Demo on Release / Push to Main / Manual Run
 
 on:
     release:
         types: [published]
+    push:
+        branches: [main]
     workflow_dispatch:
         inputs:
             ref:
@@ -18,9 +20,10 @@ permissions:
 jobs:
     build:
         runs-on: ubuntu-latest
-        # Allow release from main OR manual runs.
+        # Allow release from main, push to main, OR manual runs.
         if: >
             (github.event_name == 'release' && github.event.release.target_commitish == 'main')
+            || (github.event_name == 'push' && github.ref == 'refs/heads/main')
             || (github.event_name == 'workflow_dispatch')
         steps:
             - name: Checkout code
