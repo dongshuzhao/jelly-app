@@ -249,6 +249,10 @@
     font-variant-numeric: tabular-nums;
 }
 
+.now-playing > .ui > .playing-content > .playing-progress > .info > .quality > .codec {
+    font-variant-numeric: tabular-nums;
+}
+
 .now-playing > .ui > .playing-content > .playing-progress > .info > .quality > .download-state {
     fill: var(--font-color-secondary);
     margin-left: 6px;

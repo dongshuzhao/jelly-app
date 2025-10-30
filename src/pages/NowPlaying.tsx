@@ -7,6 +7,7 @@ import { DownloadIndicators } from '../components/MediaList'
 import { Squircle } from '../components/Squircle'
 import { LyricsIcon, MoreIcon, QueueIcon, TracksIcon } from '../components/SvgIcons'
 import { TrackBitrate } from '../components/TrackBitrate'
+import { TrackCodec } from '../components/TrackCodec'
 import { useDropdownContext } from '../context/DropdownContext/DropdownContext'
 import { useHistoryContext } from '../context/HistoryContext/HistoryContext'
 import { usePlaybackContext } from '../context/PlaybackContext/PlaybackContext'
@@ -158,17 +159,25 @@ export const NowPlaying = () => {
                             <div className="info">
                                 <div className="duration">{playback.formatTime(duration.progress)}</div>
                                 <div className="quality">
-                                    <div className="text">
-                                        {bitrate === 320000
-                                            ? 'High'
-                                            : bitrate === 256000
-                                            ? 'Medium'
-                                            : bitrate === 192000
-                                            ? 'Low'
-                                            : bitrate === 128000
-                                            ? 'Minimal'
-                                            : 'Source'}
-                                    </div>
+                                    {bitrate === 320000 || bitrate === 256000 || bitrate === 192000 || bitrate === 128000 ? (
+                                        // Show quality name when not Source
+                                        <div className="text">
+                                            {bitrate === 320000
+                                                ? 'High'
+                                                : bitrate === 256000
+                                                ? 'Medium'
+                                                : bitrate === 192000
+                                                ? 'Low'
+                                                : bitrate === 128000
+                                                ? 'Minimal'
+                                                : 'Source'}
+                                        </div>
+                                    ) : (
+                                        // Show codec when Source
+                                        <div className="codec">
+                                            <TrackCodec currentTrack={currentTrack} bitrate={bitrate} />
+                                        </div>
+                                    )}
                                     <div className="divider" />
                                     <div className="bitrate">
                                         <span className="number">
