@@ -1,5 +1,5 @@
 import { ArrowLeftIcon, HeartFillIcon, HeartIcon } from '@primer/octicons-react'
-import { ChangeEvent, useEffect, WheelEvent } from 'react'
+import { ChangeEvent, useEffect, useState, WheelEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { JellyImg } from '../components/JellyImg'
 import { Progressbar } from '../components/Main'
@@ -26,6 +26,76 @@ export const NowPlaying = () => {
     const { isOpen, selectedItem, onContextMenu } = useDropdownContext()
     const { addToFavorites, removeFromFavorites } = useFavorites()
     const { setDisabled } = useScrollContext()
+
+    // State for dynamic codec and bitrate from HLS URLs
+    const [dynamicCodec, setDynamicCodec] = useState<string | null>(null)
+    const [dynamicBitrate, setDynamicBitrate] = useState<number | null>(null)
+
+    // Parse HLS URL to extract codec and calculate actual bitrate from hls.js fragment data
+    const parseHlsUrlAndGetBitrate = (url: string, eventDetail: any) => {
+        // Check if this is an HLS segment URL
+        if (url.includes('/hls1/')) {
+            const urlParams = new URLSearchParams(url.split('?')[1] || '')
+
+            // Extract AudioCodec from URL parameters
+            const audioCodec = urlParams.get('AudioCodec')
+
+            // Try to get actual bitrate from hls.js fragment data
+            let actualBitrate = null
+
+            // Check if we have hls.js fragment data with size and duration
+            if (eventDetail.frag) {
+                const frag = eventDetail.frag
+
+                // Calculate bitrate using fragment size and duration
+                if (frag.stats && frag.stats.total && frag.duration) {
+                    // loaded is in bytes, duration is in seconds
+                    actualBitrate = Math.round((frag.stats.total * 8) / frag.duration)
+                }
+            }
+
+            // Fallback to MaxStreamingBitrate from URL if hls.js data not available
+            if (!actualBitrate) {
+                const maxBitrate = urlParams.get('MaxStreamingBitrate')
+                actualBitrate = maxBitrate ? parseInt(maxBitrate, 10) : null
+            }
+
+            return {
+                codec: audioCodec || null,
+                bitrate: actualBitrate
+            }
+        }
+
+        return { codec: null, bitrate: null }
+    }
+
+    // Listen for audio load events
+    useEffect(() => {
+        const handleAudioLoad = (event: CustomEvent) => {
+            const { url, type, ...eventDetail } = event.detail
+            if (type === 'hls-segment' && url.includes('/hls1/')) {
+                const { codec, bitrate } = parseHlsUrlAndGetBitrate(url, eventDetail)
+
+                if (codec) {
+                    setDynamicCodec(codec)
+                }
+
+                if (bitrate) {
+                    setDynamicBitrate(bitrate)
+                }
+            } else if (type === 'audio-source') {
+                // Reset to default values for direct audio sources
+                setDynamicCodec(null)
+                setDynamicBitrate(null)
+            }
+        }
+
+        window.addEventListener('audioLoad', handleAudioLoad as EventListener)
+
+        return () => {
+            window.removeEventListener('audioLoad', handleAudioLoad as EventListener)
+        }
+    }, [])
 
     const handleVolumeChange = (e: ChangeEvent<HTMLInputElement>) => {
         const newVolume = parseFloat(e.target.value)
@@ -159,42 +229,59 @@ export const NowPlaying = () => {
                             <div className="info">
                                 <div className="duration">{playback.formatTime(duration.progress)}</div>
                                 <div className="quality">
-                                    {bitrate === 320000 || bitrate === 256000 || bitrate === 192000 || bitrate === 128000 ? (
-                                        // Show quality name when not Source
-                                        <div className="text">
-                                            {bitrate === 320000
-                                                ? 'High'
-                                                : bitrate === 256000
-                                                ? 'Medium'
-                                                : bitrate === 192000
-                                                ? 'Low'
-                                                : bitrate === 128000
-                                                ? 'Minimal'
-                                                : 'Source'}
-                                        </div>
+                                    {/* Use dynamic values from HLS URL when available, otherwise fallback to default logic */}
+                                    {dynamicBitrate && dynamicCodec ? (
+                                        // Show dynamic values from HLS URL
+                                        <>
+                                            <div className="codec">
+                                                {dynamicCodec.toUpperCase()}
+                                            </div>
+                                            <div className="divider" />
+                                            <div className="bitrate">
+                                                <span className="number">
+                                                    {Math.round(dynamicBitrate / 1000)}
+                                                </span>{' '}
+                                                Kbps
+                                            </div>
+                                        </>
+                                    ) : bitrate === 320000 || bitrate === 256000 || bitrate === 192000 || bitrate === 128000 ? (
+                                        // Show quality name when not Source (fallback to original logic)
+                                        <>
+                                            <div className="text">
+                                                {bitrate === 320000
+                                                    ? 'High'
+                                                    : bitrate === 256000
+                                                    ? 'Medium'
+                                                    : bitrate === 192000
+                                                    ? 'Low'
+                                                    : 'Minimal'}
+                                            </div>
+                                            <div className="divider" />
+                                            <div className="bitrate">
+                                                <span className="number">
+                                                    {bitrate === 320000 ? '320'
+                                                        : bitrate === 256000 ? '256'
+                                                        : bitrate === 192000 ? '192'
+                                                        : '128'}
+                                                </span>{' '}
+                                                Kbps
+                                            </div>
+                                        </>
                                     ) : (
-                                        // Show codec when Source
-                                        <div className="codec">
-                                            <TrackCodec currentTrack={currentTrack} bitrate={bitrate} />
-                                        </div>
+                                        // Show codec when Source (fallback to original logic)
+                                        <>
+                                            <div className="codec">
+                                                <TrackCodec currentTrack={currentTrack} bitrate={bitrate} />
+                                            </div>
+                                            <div className="divider" />
+                                            <div className="bitrate">
+                                                <span className="number">
+                                                    <TrackBitrate currentTrack={currentTrack} />
+                                                </span>{' '}
+                                                Kbps
+                                            </div>
+                                        </>
                                     )}
-                                    <div className="divider" />
-                                    <div className="bitrate">
-                                        <span className="number">
-                                            {bitrate === 320000 ? (
-                                                '320'
-                                            ) : bitrate === 256000 ? (
-                                                '256'
-                                            ) : bitrate === 192000 ? (
-                                                '192'
-                                            ) : bitrate === 128000 ? (
-                                                '128'
-                                            ) : (
-                                                <TrackBitrate currentTrack={currentTrack} />
-                                            )}
-                                        </span>{' '}
-                                        kbps
-                                    </div>
 
                                     <DownloadIndicators
                                         offlineState={currentTrack?.offlineState}

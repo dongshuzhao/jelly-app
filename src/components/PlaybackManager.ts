@@ -3,6 +3,22 @@ import { AxiosError } from 'axios'
 import Hls, { FragmentLoaderContext, HlsConfig, LoaderCallbacks, LoaderConfiguration } from 'hls.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MediaItem } from '../api/jellyfin'
+
+// Custom event types for audio loading events
+interface AudioLoadEvent extends CustomEvent {
+    detail: {
+        url: string;
+        type: 'hls-segment' | 'audio-source';
+        trackId?: string;
+        timestamp: number;
+    }
+}
+
+declare global {
+    interface WindowEventMap {
+        'audioLoad': AudioLoadEvent;
+    }
+}
 import { useAudioStorageContext } from '../context/AudioStorageContext/AudioStorageContext'
 import { useJellyfinContext } from '../context/JellyfinContext/JellyfinContext'
 import { IJellyfinInfiniteProps, useJellyfinInfiniteData } from '../hooks/Jellyfin/Infinite/useJellyfinInfiniteData'
@@ -555,6 +571,21 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
                     }
                 }
             })
+
+            hls.on(Hls.Events.FRAG_LOADED, (_evt, data) => {
+                if (data.frag && data.frag.url) {
+                    const event = new CustomEvent('audioLoad', {
+                        detail: {
+                            url: data.frag.url,
+                            type: 'hls-segment' as const,
+                            trackId: trackId,
+                            timestamp: Date.now(),
+                            frag: data.frag // Pass fragment data for bitrate calculation
+                        }
+                    })
+                    window.dispatchEvent(event)
+                }
+            })
         },
         [audioStorage]
     )
@@ -568,15 +599,44 @@ export const usePlaybackManager = ({ initialVolume, clearOnLogout }: PlaybackMan
 
             const offlineUrl = await audioStorage.getPlayableUrl(track.Id)
             const streamUrl = api.getStreamUrl(track.Id, bitrate)
+
+            // Preflight HEAD request to detect m3u8 content
+            const audioUrl = offlineUrl?.url || streamUrl
+            let forceHls = false
+            try {
+                const response = await fetch(audioUrl, { method: 'HEAD' })
+
+                // Check if response indicates m3u8 content
+                const contentType = response.headers.get('content-type')
+                const contentDisposition = response.headers.get('content-disposition')
+                if (contentType?.includes('application/vnd.apple.mpegurl') || 
+                    contentType?.includes('application/x-mpegurl') ||
+                    contentDisposition?.includes('.m3u8') ||
+                    audioUrl.includes('.m3u8')) {
+                    forceHls = true
+                }
+            } catch (error) {
+                console.warn('Preflight HEAD request failed, using fallback logic:', error)
+            }
+
             const isTranscoded = offlineUrl
                 ? offlineUrl.type === 'm3u8'
-                : [128000, 192000, 256000, 320000].includes(bitrate)
-
-            if (isTranscoded && Hls.isSupported()) {
+                : [128000, 192000, 256000, 320000].includes(bitrate) || forceHls
+            if ((isTranscoded || forceHls) && Hls.isSupported()) {
                 await handleHls(audio, hlsIndex, offlineUrl?.url, streamUrl, track.Id)
             } else {
-                audio.src = offlineUrl?.url || streamUrl
+                audio.src = audioUrl
                 audio.load()
+                // Fire audio source loaded event
+                const event = new CustomEvent('audioLoad', {
+                    detail: {
+                        url: audioUrl,
+                        type: 'audio-source' as const,
+                        trackId: track.Id,
+                        timestamp: Date.now()
+                    }
+                })
+                window.dispatchEvent(event)
             }
         },
         [api, audioStorage, bitrate, handleHls]
