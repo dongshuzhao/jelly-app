@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react'
+import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -8,6 +9,11 @@ export default defineConfig({
     base: process.env.URL_BASE_PATH || '/',
     plugins: [
         react(),
+        legacy({
+            targets: ['defaults', 'safari >= 10'],
+            additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+            modernPolyfills: true,
+        }),
         VitePWA({
             registerType: 'autoUpdate',
             workbox: {
@@ -73,6 +79,9 @@ export default defineConfig({
             },
         },
     ],
+    build: {
+        target: 'es2015', // ensures Babel lowers syntax enough
+    },
     define: {
         __NPM_LIFECYCLE_EVENT__: JSON.stringify(process.env.npm_lifecycle_event),
         __VERSION__: JSON.stringify(version),
